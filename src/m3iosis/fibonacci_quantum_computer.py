@@ -204,8 +204,25 @@ class FibonacciGateSet:
 
             d(U,V) = sqrt(max(0, 1 - |tr(U^dag V)| / n))
 
-        which vanishes exactly when V = e^{i phi} U.
+        which vanishes exactly when V = e^{i phi} U. That closed form is NOT
+        what is evaluated, because it cancels catastrophically: at a true
+        distance of 1e-8 the quantity `1 - overlap` is machine epsilon and the
+        metric floors to exactly zero, and it is already a few percent off at
+        1e-5 — the range these braids actually reach. Removing the optimal
+        phase from M = U^dag V and taking ||M' - I||_F elementwise gives the
+        same value analytically with no subtraction of near-equal numbers.
         """
+        n = target.shape[0]
+        m = target.conj().T @ gate
+        tr = np.trace(m)
+        if abs(tr) < 1e-300:
+            return 1.0
+        mp = m * (abs(tr) / tr)
+        return float(np.linalg.norm(mp - np.eye(n), 'fro') / n)
+
+    @staticmethod
+    def _projective_distance_cancelling(target, gate):
+        """The closed form, kept only to document what it does at small d."""
         n = target.shape[0]
         overlap = abs(np.trace(target.conj().T @ gate)) / n
         return float(np.sqrt(max(0.0, 1.0 - overlap)))

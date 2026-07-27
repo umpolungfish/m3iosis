@@ -25,6 +25,31 @@ Fibonacci Anyon operations.
 *   `--manifold`: Topological manifold operations (curvature, path integral).
 *   `--word GENS...`: Braid word for simulation (default: `[1, 2, 1]`).
 
+### `qc`
+Fibonacci quantum computer: compile standard gates down to braid words.
+
+*   `--circuit GATES...`: Compile a circuit over `H`, `T`, `S`, `X`. The whole circuit is compiled as one unitary rather than gate by gate, so the approximation error is incurred once instead of accumulating across the gates, and the braid comes out shorter.
+*   `--approx-h`, `--approx-t`: Compile the Hadamard or T gate on its own.
+*   `--verify`: Full verification suite.
+*   `--gate-stats`: Report on the generated gate group.
+*   `--available`: Qubit encodings available in the fusion space.
+*   `--depth N`: Maximum braid word depth (default 5).
+
+The reported error is phase-invariant, because a braid realizes its gate only up to a global phase and that phase is not observable. It is measured by removing the optimal phase and comparing elementwise, not by the usual `sqrt(1 - |tr(U†V)|/n)`, which subtracts two numbers agreeing to fifteen digits and therefore carries a few percent of error at 1e-5 and collapses to exactly zero below about 1e-8. Braids in this range routinely reach that floor, so the closed form reports perfect gates that are not perfect.
+
+Compilation splits and fuses rather than ranking. Several braid words typically sit at the same distance from the target; each seeds a different trajectory and leaves a residual rotation pointing its own way. Every one of them is followed as a separate arm, and then the arms that lost compile the residual left by the arm that won, which gets appended. The composite therefore beats every arm it was chosen from. Present accuracy at recursion depth 3, against the same net without the split:
+
+| circuit | single arm | split and fused | braid length |
+|---------|-----------|-----------------|--------------|
+| `T`     | 3.15e-05  | 5.41e-06        | 1486 → 1410  |
+| `T S`   | 9.54e-05  | 7.43e-07        | 1801 → 2367  |
+| `H T`   | 1.41e-05  | 2.92e-06        | 1732 → 2660  |
+| `H`     | 4.18e-05  | 1.35e-06        | 1797 → 4165  |
+
+`T` is the one case where the correction is not appended at all: a different tied base wins outright, so the braid gets shorter as well as more accurate. Elsewhere the accuracy is bought with roughly two to three times the length, and the cost is eight arms plus eight residual compilations instead of one pass.
+
+Every reported unitary is checked against its own printed word by resynthesizing the word from scratch, which agrees to about 1e-10. The determinant identity `det(braid) = det(sigma_1)^(sum of exponents)` is reported as context but is not the check: `det(sigma_1)` is a primitive tenth root of unity, so that test passes by chance one time in ten, and it sees only the sum of the exponents, so every permutation of a word passes it.
+
 ### `sim`
 Braid simulation.
 
