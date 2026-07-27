@@ -229,6 +229,8 @@ class FibonacciGateSet:
         """
         if self._net is None:
             self._net = self._build_gate_net(max_depth=net_depth)
+        if sk_depth > 0:
+            return self._sk_split_fuse(target, sk_depth, net_depth, self._net)
         return self.solovay_kitaev(target, depth=sk_depth, _cache=self._net)
 
     def approximate_hadamard(self, max_depth=6):
@@ -381,7 +383,8 @@ class FibonacciGateSet:
             pass
         return net
 
-    def solovay_kitaev(self, target, depth=3, base_depth=15, _cache=None):
+    def solovay_kitaev(self, target, depth=3, base_depth=15, _cache=None,
+                       _arm=None):
         """Approximate `target` to accuracy improving with `depth`.
 
         depth=0 falls back to the brute-force dictionary, which floors around
@@ -390,24 +393,76 @@ class FibonacciGateSet:
         """
         if _cache is None:
             _cache = self._build_gate_net(max_depth=base_depth)
+            # Several net entries typically sit at the SAME best base distance
+            # (3 for T, 4 for T·S). Which one is taken sets the whole recursion,
+            # and the choices differ by several-fold in final accuracy — that is
+            # why results moved between runs when insertion order changed. Try
+            # each tied candidate once at the top level and keep the best; the
+            # outcome is then deterministic AND no worse than any single rule.
+            if depth > 0:
+                return self._sk_split_fuse(target, depth, base_depth, _cache)
         if depth <= 0:
-            best_w, best_e, best_g = tuple(), float('inf'), np.eye(2, dtype=complex)
-            for w, g in _cache.items():
-                e = self.projective_distance(target, g)
-                if e < best_e:
-                    best_w, best_e, best_g = w, e, g
-            return list(best_w), best_g, best_e
+            # Ties are common — several gates sit at the same best distance (3
+            # for T, 4 for T·S at depth 15). Collect every tied candidate,
+            # order it canonically (shortest word, then lexicographic) so the
+            # result never depends on how the net happened to be built, and let
+            # `_arm` name WHICH of them this branch takes. `_arm=None` is the
+            # ordinary shortest-word rule; `_arm=i` is the i-th tied word, and
+            # a distinct i genuinely separates the branch all the way down the
+            # recursion rather than reconverging on the same base.
+            best_e = min(self.projective_distance(target, g)
+                         for g in _cache.values())
+            tied = sorted((w for w, g in _cache.items()
+                           if abs(self.projective_distance(target, g) - best_e) <= 1e-12),
+                          key=lambda w: (len(w), w))
+            w = tied[0] if _arm is None else tied[_arm % len(tied)]
+            return list(w), _cache[w], best_e
 
-        wU, gU, _ = self.solovay_kitaev(target, depth - 1, base_depth, _cache)
+
+        wU, gU, _ = self.solovay_kitaev(target, depth - 1, base_depth, _cache, _arm)
         V, W = self._gc_decompose(target @ np.linalg.inv(gU))
-        wV, gV, _ = self.solovay_kitaev(V, depth - 1, base_depth, _cache)
-        wW, gW, _ = self.solovay_kitaev(W, depth - 1, base_depth, _cache)
+        wV, gV, _ = self.solovay_kitaev(V, depth - 1, base_depth, _cache, _arm)
+        wW, gW, _ = self.solovay_kitaev(W, depth - 1, base_depth, _cache, _arm)
         inv = lambda w: [-g for g in reversed(w)]
         gate = gV @ gW @ gV.conj().T @ gW.conj().T @ gU
         # right-to-left composition: the word is the reverse concatenation of
         # the factors, so that synth(word) reproduces `gate` exactly.
         word = wU + inv(wW) + inv(wV) + wW + wV
         return word, gate, self.projective_distance(target, gate)
+
+    def _sk_split_fuse(self, target, depth, base_depth, cache, n_arms=8):
+        """δ then μ over the tied bases, rather than a ranking.
+
+        Several braid words sit at the same distance from `target`; each one
+        seeds a different trajectory and leaves a residual rotation pointing
+        its own way. Splitting on the arm index makes those branches actually
+        distinct (FSPLIT). Fusing then keeps the losers: the surviving arm's
+        residual `target · gate⁻¹` is itself compiled — by the arms that lost —
+        and appended, so the composite braid is shorter-of-nothing but strictly
+        closer to the target than the arm it grew from (FFUSE).
+        """
+        arms, seen = [], set()
+        for i in range(n_arms):
+            w, g, e = self.solovay_kitaev(target, depth, base_depth,
+                                          _cache=cache, _arm=i)
+            key = tuple(w)
+            if key in seen:      # arm index ran past the tie count and aliased
+                continue
+            seen.add(key)
+            arms.append((w, g, e))
+
+        best_w, best_g, best_e = min(arms, key=lambda r: r[2])
+        # μ: the losing arms compile the survivor's residual.
+        for i in range(len(arms)):
+            residual = target @ np.linalg.inv(best_g)
+            rw, rg, _ = self.solovay_kitaev(residual, depth, base_depth,
+                                            _cache=cache, _arm=i)
+            gate = rg @ best_g
+            word = best_w + rw            # right-to-left: rg applies last
+            err = self.projective_distance(target, gate)
+            if err < best_e - 1e-15:
+                best_w, best_g, best_e = word, gate, err
+        return best_w, best_g, best_e
 
     def verify_universality(self):
         """Verify that the native gate set is universal.
