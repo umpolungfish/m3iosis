@@ -356,7 +356,11 @@ class FibonacciGateSet:
                 for g in gens:
                     if last is not None and g == -last:
                         continue
-                    V = U @ G[g]
+                    # synthesize_gate applies the FIRST letter first, so a
+                    # word composes right-to-left as a matrix product:
+                    # synth([a,b]) = G_b @ G_a. Building the net as U @ G[g]
+                    # made every multi-letter word disagree with its own gate.
+                    V = G[g] @ U
                     k = key(V)
                     if k in seen:
                         continue
@@ -399,8 +403,10 @@ class FibonacciGateSet:
         wV, gV, _ = self.solovay_kitaev(V, depth - 1, base_depth, _cache)
         wW, gW, _ = self.solovay_kitaev(W, depth - 1, base_depth, _cache)
         inv = lambda w: [-g for g in reversed(w)]
-        word = wV + wW + inv(wV) + inv(wW) + wU
         gate = gV @ gW @ gV.conj().T @ gW.conj().T @ gU
+        # right-to-left composition: the word is the reverse concatenation of
+        # the factors, so that synth(word) reproduces `gate` exactly.
+        word = wU + inv(wW) + inv(wV) + wW + wV
         return word, gate, self.projective_distance(target, gate)
 
     def verify_universality(self):
@@ -549,21 +555,27 @@ class FibonacciQuantumCircuit:
         return word, gate, err, target
 
     @staticmethod
-    def braid_determinant_check(qc, word, gate, tol=1e-8):
+    def braid_word_check(qc, word, gate, tol=1e-8):
         """Does the reported unitary actually come from the reported word?
 
-        sigma_2 = F sigma_1 F^-1 is conjugate to sigma_1, so they share a
-        determinant in any convention. Hence for ANY word
+        Resynthesize the word and compare. O(length), and it catches every
+        discrepancy.
 
-            det(braid) = det(sigma_1) ^ (sum of exponents)
-
-        which ties the printed word to the printed unitary and is independent of
-        basis, phase convention and generator labelling. Cheap, and it fails
-        loudly if the two were computed from different things.
+        The determinant identity `det(braid) = det(sigma_1)^(sum of exponents)`
+        — which holds because sigma_2 = F sigma_1 F^-1 is conjugate to sigma_1
+        — is a weaker version of this and is NOT used as the check. det(sigma_1)
+        is a primitive 10th root of unity, so that test has ten possible values
+        and passes by chance one time in ten; worse, it sees only the SUM of the
+        exponents, so every permutation of a word passes it. It is reported here
+        as context, not as evidence.
         """
+        recomputed = qc.synthesize_gate(4, list(word))
         d1 = np.linalg.det(qc.synthesize_gate(4, [1]))
-        predicted = d1 ** sum(int(np.sign(g)) for g in word)
-        return bool(abs(np.linalg.det(gate) - predicted) < tol), predicted
+        det_pred = d1 ** sum(int(np.sign(g)) for g in word)
+        # projective: the word determines the gate up to a global phase
+        n = gate.shape[0]
+        overlap = abs(np.trace(recomputed.conj().T @ gate)) / n
+        return bool(abs(1.0 - overlap) < tol), float(1.0 - overlap), det_pred
 
     def s(self, target=0):
         """Apply the phase gate S = diag(1, i).
@@ -970,24 +982,27 @@ Examples:
     if args.circuit:
         circ = FibonacciQuantumCircuit(1)
         word, gate, err, target = circ.compile_composite(list(args.circuit))
-        ok, pred = FibonacciQuantumCircuit.braid_determinant_check(
+        ok, resid, det_pred = FibonacciQuantumCircuit.braid_word_check(
             circ.gate_set.qc, word, gate)
-        print(f"  det check: {'PASS' if ok else 'FAIL'}  "
-              f"(word exponent sum {sum(int(np.sign(g)) for g in word)}, "
-              f"predicted det {pred:.6f}, actual {np.linalg.det(gate):.6f})")
+        print(f"  word check: {'PASS' if ok else 'FAIL'}  "
+              f"(resynthesized from the printed word, residual {resid:.2e}; "
+              f"det {det_pred:.6f})")
 
-        # Probabilities on |0> are blind to any diagonal circuit: T, S, Z and
-        # the identity all return |0>, so that readout cannot tell a compiled
-        # gate from doing nothing. Report the gate against its target directly,
-        # and probe on |+> as well, where a phase becomes visible.
+        # Probabilities in the computational basis are blind to any diagonal
+        # circuit — on |0> and on |+> alike, T, S, Z and the identity all read
+        # the same, because that basis cannot see a relative phase. Compare the
+        # OPERATOR against its target instead, with identity as the control, and
+        # read out in the X basis where a phase does become visible.
         plus = np.array([1.0, 1.0], dtype=complex) / np.sqrt(2.0)
+        Xb = np.array([[1.0, 1.0], [1.0, -1.0]], dtype=complex) / np.sqrt(2.0)
         gate_err = circ.gate_set.projective_distance(target, gate)
         id_err = circ.gate_set.projective_distance(target, np.eye(2, dtype=complex))
-        p_t = np.abs(target @ plus) ** 2
-        p_g = np.abs(gate @ plus) ** 2
-        print(f"  vs target: {gate_err:.3e}   (identity would score {id_err:.3e})")
-        print(f"  on |+>   : target {np.round(p_t, 8)}  braid {np.round(p_g, 8)}"
-              f"   max dev {float(np.max(np.abs(p_t - p_g))):.3e}")
+        px_t = np.abs(Xb @ (target @ plus)) ** 2
+        px_g = np.abs(Xb @ (gate @ plus)) ** 2
+        px_i = np.abs(Xb @ plus) ** 2
+        print(f"  vs target : {gate_err:.3e}   (identity would score {id_err:.3e})")
+        print(f"  X basis   : target {np.round(px_t, 6)}  braid {np.round(px_g, 6)}"
+              f"  identity {np.round(px_i, 6)}")
         report = circ.report()
         print(f"Circuit: {' -> '.join(report['gates_applied'])}")
         print(f"  Encoding: {report['encoding']}, anyons: {report['n_anyons']}, dim: {report['dim']}")
