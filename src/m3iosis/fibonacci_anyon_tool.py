@@ -310,6 +310,26 @@ class FibonacciQuantumComputer:
         return sig1, (sig2[:n - 1] if n >= 2 else [])
 
     @staticmethod
+    def validate_braid_word(n, word):
+        """B_n has generators sigma_1 .. sigma_{n-1}; anything else is not a braid.
+
+        Raised rather than truncated deliberately. Silently stopping at the
+        first out-of-range generator returns the invariant of a prefix, which
+        then gets read as the invariant of the whole word — a wrong answer that
+        looks entirely reasonable.
+        """
+        top = max(0, n - 1)
+        for g in word:
+            if g == 0:
+                raise ValueError("generator 0 does not exist; they are numbered from 1")
+            if abs(g) > top:
+                raise ValueError(
+                    f"sigma_{abs(g)} does not exist on {n} strands: B_{n} has "
+                    f"sigma_1 .. sigma_{top}. This word needs at least "
+                    f"{abs(g) + 1} strands."
+                )
+
+    @staticmethod
     def _apply_word(sigmas, word, dim):
         U = np.eye(dim, dtype=complex)
         for g in word:
@@ -358,6 +378,7 @@ class FibonacciQuantumComputer:
                 "Fibonacci anyons evaluate the Jones polynomial at the fifth "
                 "root of unity only; other roots need a different anyon model."
             )
+        self.validate_braid_word(n, word)
         word = [-g for g in word]
         alpha = cmath.exp(-1j * math.pi / 5)
         beta = -PHI

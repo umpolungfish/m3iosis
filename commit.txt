@@ -1,24 +1,17 @@
-The anyons evaluate the Jones polynomial rather than trace it.
+A word that is not a braid on n strands is refused, not truncated.
 
-What stood in jones_polynomial was a normalized trace: no writhe correction,
-no weighting by quantum dimension, and so not the invariant. The quantum trace
-runs over both total-charge sectors, tau^n -> 1 weighted by one and tau^n -> tau
-weighted by phi, the latter realized as the vacuum sector on one extra strand
-with the last one left alone.
+B_n has generators sigma_1 .. sigma_{n-1}, so on three strands there is no
+sigma_3. Given one, the evaluator stopped at it and returned the product of the
+prefix, while the writhe was still summed over the whole word. A 33-crossing
+word containing sigma_3 on three strands reported the invariant of its first
+five crossings, and reported it in the same format and with the same confidence
+as a correct answer. Nothing about the output said a word had been discarded.
 
-The two normalization constants are forced, not fitted. Requiring the unknot to
-evaluate to 1 in its three Markov presentations is two constraints in two
-unknowns, and it returns the framing phase e^{-i pi/5} and the loop value -phi,
-which are the constants the theory names. Every knot after that is a prediction:
-the trefoil, its mirror, the figure-eight and the cinquefoil all land on their
-exact values.
+validate_braid_word rejects with the offending generator, the range that does
+exist, and the strand count the word actually needs. The matrix loop skips
+rather than breaks, so a missed validation degrades visibly instead of
+plausibly.
 
-sigma_1 here is the negative crossing in the standard Jones orientation, so the
-word is mirrored inside the function. That showed up as the trefoil pair
-swapping cleanly while the amphichiral and real-valued knots passed untouched,
-which is what identified it as a convention rather than an error.
-
-Chirality is detected exactly when the value has nonzero imaginary part, and
-that is forced: integer coefficients plus t^-1 = conj(t) on the unit circle give
-V(K*) = conj(V(K)). One root is not a complete invariant, and 8_19 shows why,
-since t^3 + t^5 - t^8 collapses to 1 under t^5 = 1.
+The same fix in both ports, which now agree on the word that surfaced it: read
+on four strands rather than three it gives -0.809017 -1.314328i, the trefoil's
+value at this root.
