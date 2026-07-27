@@ -1,0 +1,103 @@
+{
+  "name": "graviton",
+  "tuple": "\u27e8\u00d0=\ud801\udc66; \u00de=\ud801\udc78; \u0158=\ud801\udc7d; \u03a6=\ud801\udc6f; \u0192=\ud801\udc50; \u00c7=\ud801\udc67; \u0393=\ud801\udc72; \u0262=\ud801\udc75; \u2299=\u2299; \u0126=\ud801\udc53; \u03a3=\ud801\udc59; \u03a9=\ud801\udc6d\u27e9",
+  "tier": "O\u2082",
+  "physics_projection": "Graviton (O\u2082)",
+  "distance_to_winding": 2.6833,
+  "distance_mahalanobis": 3.3615,
+  "distance_breakdown": [
+    {
+      "primitive": "\u0126",
+      "v1": 1,
+      "v2": 3,
+      "delta": 2.0,
+      "weighted_sq": 3.2
+    },
+    {
+      "primitive": "\u0158",
+      "v1": 3,
+      "v2": 4,
+      "delta": 1.0,
+      "weighted_sq": 1.0
+    },
+    {
+      "primitive": "\u03a6",
+      "v1": 4,
+      "v2": 5,
+      "delta": 1.0,
+      "weighted_sq": 1.0
+    },
+    {
+      "primitive": "\u0393",
+      "v1": 3,
+      "v2": 2,
+      "delta": 1.0,
+      "weighted_sq": 1.0
+    },
+    {
+      "primitive": "\u0262",
+      "v1": 4,
+      "v2": 3,
+      "delta": 1.0,
+      "weighted_sq": 1.0
+    }
+  ],
+  "promotions_to_O_inf": [
+    "\u2191 R: \ud801\udc7d\u2192\ud801\udc7e",
+    "\u2191 P: \ud801\udc6f\u2192\ud801\udc79",
+    "\u2191 G: \ud801\udc72\u2192\ud801\udc54",
+    "\u2191 H: \ud801\udc53\u2192\ud801\udc56"
+  ],
+  "demotions_to_O_inf": [
+    "\u2193 Gm: \ud801\udc75\u2192\ud801\udc60"
+  ],
+  "promotion_signature": [
+    "\u0158",
+    "\u03a6",
+    "\u0126"
+  ],
+  "open_clink_l8_gaps": [
+    "Eternal Chirality",
+    "Heterogeneous Types",
+    "Non-Abelian Braiding"
+  ],
+  "gap_details": [
+    {
+      "primitive": "H",
+      "current": "\ud801\udc53",
+      "target": "\ud801\udc6b",
+      "label": "Eternal Chirality",
+      "meaning": "2-step\u2192eternal: dark energy, cosmological constant, arrow of time",
+      "distance": 3
+    },
+    {
+      "primitive": "S",
+      "current": "\ud801\udc59",
+      "target": "\ud801\udc73",
+      "label": "Heterogeneous Types",
+      "meaning": "1:1\u2192heterogeneous: unification of forces, particle hierarchy",
+      "distance": 2
+    },
+    {
+      "primitive": "W",
+      "current": "\ud801\udc6d",
+      "target": "\ud801\udc5f",
+      "label": "Non-Abelian Braiding",
+      "meaning": "Abelian \u2124\u2192non-Abelian: quantum gravity, spacetime topology, anyons",
+      "distance": 1
+    }
+  ],
+  "c_score": 0.828,
+  "at_criticality": true,
+  "frobenius_closed": false,
+  "sic_povm_alignment": "error",
+  "closure_radius": 1.3934489585198304,
+  "bridge_count": 10,
+  "bridges": [
+    "photon_graviton_join",
+    "photon_graviton_tensor",
+    "top_protected_decoding",
+    "unitary_quantum_evolution",
+    "quantum_superposition"
+  ]
+}

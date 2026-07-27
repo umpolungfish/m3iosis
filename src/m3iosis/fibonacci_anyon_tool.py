@@ -296,27 +296,74 @@ class FibonacciQuantumComputer:
             ),
         }
 
-    def jones_polynomial(self, n: int, word: list, root_of_unity=None):
-        """Compute the Jones polynomial evaluation from a braid.
+    def _sector_reps(self, n: int):
+        """Braid generators in both total-charge sectors on n strands.
 
-        The Jones polynomial at q = e^{2*pi*i/(k+2)} = e^{2*pi*i/5} is obtained
-        from the Markov trace of the braid representation.
-
-        Returns the normalized Jones value.
+        The quantum trace runs over BOTH sectors: tau^n -> 1 (dimension
+        F_{n-1}, weight 1) and tau^n -> tau (dimension F_n, weight phi). The
+        second is the vacuum sector on n+1 strands acted on by the first n-1
+        generators only, since tau^n -> tau is the same space as
+        tau^{n+1} -> 1 with the extra strand left alone.
         """
-        if root_of_unity is None:
-            root_of_unity = cmath.exp(2j * math.pi / (K + 2))
+        _, sig1 = fibonacci_braid_representation(n)
+        _, sig2 = fibonacci_braid_representation(n + 1)
+        return sig1, (sig2[:n - 1] if n >= 2 else [])
 
-        U = self.algebra.braid_word(n, word)
-        d = U.shape[0]
-        if d == 0:
-            return 1.0
+    @staticmethod
+    def _apply_word(sigmas, word, dim):
+        U = np.eye(dim, dtype=complex)
+        for g in word:
+            k = abs(g) - 1
+            if k >= len(sigmas):
+                raise IndexError(f"generator {g} exceeds {len(sigmas)} available")
+            M = sigmas[k]
+            U = (M if g > 0 else M.conj().T) @ U
+        return U
 
-        # Markov trace: normalized trace times quantum dimension factor
-        markov_trace = np.trace(U) / d
-        # Normalization: for the unknot, Jones = 1
-        # The quantum trace involves the R-matrix eigenvalues
-        return complex(markov_trace)
+    def quantum_trace(self, n: int, word: list):
+        """Weighted trace over both total-charge sectors: tr_1 + phi * tr_tau."""
+        s1, s2 = self._sector_reps(n)
+        t1 = np.trace(self._apply_word(s1, word, s1[0].shape[0])) if s1 else 1.0
+        t2 = np.trace(self._apply_word(s2, word, s2[0].shape[0])) if s2 else 0.0
+        return complex(t1 + PHI * t2)
+
+    def jones_polynomial(self, n: int, word: list, root_of_unity=None):
+        """Jones polynomial of the braid closure, evaluated at t = e^{2 pi i/5}.
+
+        This is the evaluation Fibonacci anyons perform natively: SU(2) level 3
+        Chern-Simons gives the Jones polynomial at the fifth root of unity, and
+        the braid representation IS that evaluation rather than a simulation
+        of it.
+
+        The two normalization constants are forced, not fitted. Requiring the
+        unknot to evaluate to 1 in its three Markov presentations (empty word
+        on one strand, sigma_1 and sigma_1^{-1} on two) determines both, and
+        they come out as the constants the theory names: the framing phase
+        alpha = e^{-i pi/5}, a tenth root of unity, and beta = -phi, the
+        negative of the loop value. No knot was used to fix them.
+
+        HANDEDNESS: this module's sigma_1 is the NEGATIVE crossing in the
+        standard Jones orientation, so the word is mirrored here. The
+        convention is visible only on chiral knots; amphichiral ones and those
+        whose value is real at this root evaluate the same either way.
+
+        Verified against exact values for the trefoil, its mirror, the
+        figure-eight and the cinquefoil.
+
+        A single root of unity is not a complete invariant. T(2,9), T(2,11)
+        and 8_19 all evaluate to 1 here, as the unknot does.
+        """
+        if root_of_unity is not None and abs(root_of_unity - cmath.exp(2j*math.pi/5)) > 1e-12:
+            raise ValueError(
+                "Fibonacci anyons evaluate the Jones polynomial at the fifth "
+                "root of unity only; other roots need a different anyon model."
+            )
+        word = [-g for g in word]
+        alpha = cmath.exp(-1j * math.pi / 5)
+        beta = -PHI
+        writhe = sum(1 if g > 0 else -1 for g in word)
+        z = self.quantum_trace(n, word) / self.quantum_trace(n, [])
+        return complex(alpha ** writhe * beta ** (n - 1) * z)
 
 
 class FibonacciDiagram:

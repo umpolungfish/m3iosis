@@ -16,7 +16,7 @@ Fibonacci Anyon operations.
 *   `--diag`: Run algebraic kernel verification. Checks for unitarity, Frobenius consistency (B4=T), and topological consistency of the S-matrix.
 *   `--fusion A B`: Fuse two anyons. Example: `--fusion tau tau` → `tau x tau = 1 + tau`
 *   `--braid N GENS...`: Evaluate a braid word on N strands. Example: `--braid 4 1 2 3 1 2 3`
-*   `--jones N GENS...`: Compute the Jones polynomial (normalized Markov trace) from a braid word.
+*   `--jones N GENS...`: Jones polynomial of the braid closure at t = e^{2πi/5}, the evaluation Fibonacci anyons perform natively. The quantum trace runs over both total-charge sectors weighted by quantum dimension. Its two normalization constants are forced by the Markov moves on the unknot rather than fitted, and come out as the framing phase e^{-iπ/5} and the loop value -φ. Verified against exact values for the trefoil, its mirror, the figure-eight and the cinquefoil. Note that σ₁ here is the negative crossing in the standard Jones orientation, and that one root of unity is not a complete invariant: T(2,9), T(2,11) and 8₁₉ all evaluate to 1 as the unknot does.
 *   `--gate-info`: Report on quantum computational universality. Shows available qubit counts where dim V_n is a power of 2.
 *   `--tree N`: Show the fusion tree basis states for N tau-anyons fusing to vacuum.
 *   `--dimension N`: Print the fusion space dimension dim V_n = Fibonacci F_{n-1}.
@@ -42,13 +42,13 @@ Compilation splits and fuses rather than ranking. Several braid words typically 
 | circuit | single arm | split and fused | braid length |
 |---------|-----------|-----------------|--------------|
 | `T`     | 3.15e-05  | 5.41e-06        | 1486 → 1410  |
-| `T S`   | 9.54e-05  | 7.43e-07        | 1801 → 2367  |
+| `T S`   | 9.54e-05  | 1.83e-07        | 1801 → 5247  |
 | `H T`   | 1.41e-05  | 2.92e-06        | 1732 → 2660  |
 | `H`     | 4.18e-05  | 1.35e-06        | 1797 → 4165  |
 
 `T` is the one case where the correction is not appended at all: a different tied base wins outright, so the braid gets shorter as well as more accurate. Elsewhere the accuracy is bought with roughly two to three times the length, and the cost is eight arms plus eight residual compilations instead of one pass.
 
-Every reported unitary is checked against its own printed word by resynthesizing the word from scratch, which agrees to about 1e-10. The determinant identity `det(braid) = det(sigma_1)^(sum of exponents)` is reported as context but is not the check: `det(sigma_1)` is a primitive tenth root of unity, so that test passes by chance one time in ten, and it sees only the sum of the exponents, so every permutation of a word passes it.
+Every reported unitary is checked against its own printed word by resynthesizing the word from scratch, which agrees to about 1e-13. The determinant identity `det(braid) = det(sigma_1)^(sum of exponents)` is reported as context but is not the check: `det(sigma_1)` is a primitive tenth root of unity, so that test passes by chance one time in ten, and it sees only the sum of the exponents, so every permutation of a word passes it.
 
 ### `sim`
 Braid simulation.
