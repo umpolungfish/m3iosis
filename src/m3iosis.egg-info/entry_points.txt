@@ -1,0 +1,4 @@
+[console_scripts]
+fib_cli = m3iosis.fibonacci_cli:main
+fib_qc = m3iosis.fibonacci_quantum_computer:quantum_computer_cli
+m3 = m3iosis.cli:main

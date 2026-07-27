@@ -1,0 +1,20 @@
+[project]
+name = "m3iosis"
+version = "0.1.0"
+description = "Meta-Mathematical Morphogenesis and Anyonic Algebra"
+dependencies = [
+    "numpy",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+m3 = "m3iosis.cli:main"
+fib_qc = "m3iosis.fibonacci_quantum_computer:quantum_computer_cli"
+fib_cli = "m3iosis.fibonacci_cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["m3iosis"]
