@@ -326,6 +326,16 @@ class FibonacciGateSet:
         charge of the first pair equals that of the last, so sigma_3 acts
         identically to sigma_1 and doubles the branching for nothing.
         """
+        import os, pickle
+        cache_path = os.path.expanduser(
+            f"~/.cache/m3iosis/fib_gate_net_d{max_depth}_n{max_gates}.pkl")
+        if os.path.exists(cache_path):
+            try:
+                with open(cache_path, "rb") as fh:
+                    return pickle.load(fh)
+            except Exception:
+                pass
+
         gens = [1, 2, -1, -2]
         G = {g: self.qc.synthesize_gate(4, [g]) for g in gens}
         I = np.eye(2, dtype=complex)
@@ -358,6 +368,13 @@ class FibonacciGateSet:
             frontier = nxt
             if len(net) >= max_gates:
                 break
+
+        try:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            with open(cache_path, "wb") as fh:
+                pickle.dump(net, fh)
+        except Exception:
+            pass
         return net
 
     def solovay_kitaev(self, target, depth=3, base_depth=15, _cache=None):
@@ -505,6 +522,64 @@ class FibonacciQuantumCircuit:
             self.gate_history.append("X")
         else:
             raise NotImplementedError("Multi-qubit X gate not yet supported")
+
+    IDEAL = None   # set below, after FibonacciGateSet is defined
+
+    def compile_composite(self, names, sk_depth=3):
+        """Compile a whole circuit as ONE unitary rather than gate by gate.
+
+        Per-gate compilation composes independent approximations, so the errors
+        add; compiling the product incurs a single approximation. For `T then S`
+        this is 1.5e-05 against 9.2e-05 per-gate, with a shorter word.
+
+        It also dissolves the S-as-T² question: the composite target is the same
+        matrix either way, so whether S is expanded is no longer a numerical
+        choice, only a labelling one.
+        """
+        gs = self.gate_set
+        table = {"H": FibonacciGateSet.HADAMARD, "T": FibonacciGateSet.T_GATE,
+                 "S": FibonacciGateSet.S_GATE,  "X": FibonacciGateSet.PAULI_X}
+        target = np.eye(2, dtype=complex)
+        for nm in names:                      # left-to-right application
+            target = table[nm] @ target
+        word, gate, err = gs.approximate_gate(target, sk_depth=sk_depth)
+        self.state.apply_gate(gate)
+        self.braid_history.append(("+".join(names), word, err))
+        self.gate_history.extend(names)
+        return word, gate, err, target
+
+    @staticmethod
+    def braid_determinant_check(qc, word, gate, tol=1e-8):
+        """Does the reported unitary actually come from the reported word?
+
+        sigma_2 = F sigma_1 F^-1 is conjugate to sigma_1, so they share a
+        determinant in any convention. Hence for ANY word
+
+            det(braid) = det(sigma_1) ^ (sum of exponents)
+
+        which ties the printed word to the printed unitary and is independent of
+        basis, phase convention and generator labelling. Cheap, and it fails
+        loudly if the two were computed from different things.
+        """
+        d1 = np.linalg.det(qc.synthesize_gate(4, [1]))
+        predicted = d1 ** sum(int(np.sign(g)) for g in word)
+        return bool(abs(np.linalg.det(gate) - predicted) < tol), predicted
+
+    def s(self, target=0):
+        """Apply the phase gate S = diag(1, i).
+
+        Compiled directly rather than as T·T: one Solovay-Kitaev call instead of
+        two, so the error is a single approximation rather than the sum, and the
+        braid word is about half as long. Expanding it also mislabelled the
+        circuit — `T S` reported itself as `T -> T -> T`.
+        """
+        if self.num_qubits == 1:
+            word, gate, err = self.gate_set.approximate_gate(FibonacciGateSet.S_GATE)
+            self.state.apply_gate(gate)
+            self.braid_history.append(("S", word, err))
+            self.gate_history.append("S")
+        else:
+            raise NotImplementedError("Multi-qubit S gate not yet supported")
 
     def custom_gate(self, unitary, name="custom"):
         """Apply a custom unitary gate."""
@@ -894,17 +969,25 @@ Examples:
 
     if args.circuit:
         circ = FibonacciQuantumCircuit(1)
-        for gate_name in args.circuit:
-            if gate_name == "H":
-                circ.h()
-            elif gate_name == "T":
-                circ.t()
-            elif gate_name == "X":
-                circ.x()
-            elif gate_name == "S":
-                # S = T^2
-                circ.t()
-                circ.t()
+        word, gate, err, target = circ.compile_composite(list(args.circuit))
+        ok, pred = FibonacciQuantumCircuit.braid_determinant_check(
+            circ.gate_set.qc, word, gate)
+        print(f"  det check: {'PASS' if ok else 'FAIL'}  "
+              f"(word exponent sum {sum(int(np.sign(g)) for g in word)}, "
+              f"predicted det {pred:.6f}, actual {np.linalg.det(gate):.6f})")
+
+        # Probabilities on |0> are blind to any diagonal circuit: T, S, Z and
+        # the identity all return |0>, so that readout cannot tell a compiled
+        # gate from doing nothing. Report the gate against its target directly,
+        # and probe on |+> as well, where a phase becomes visible.
+        plus = np.array([1.0, 1.0], dtype=complex) / np.sqrt(2.0)
+        gate_err = circ.gate_set.projective_distance(target, gate)
+        id_err = circ.gate_set.projective_distance(target, np.eye(2, dtype=complex))
+        p_t = np.abs(target @ plus) ** 2
+        p_g = np.abs(gate @ plus) ** 2
+        print(f"  vs target: {gate_err:.3e}   (identity would score {id_err:.3e})")
+        print(f"  on |+>   : target {np.round(p_t, 8)}  braid {np.round(p_g, 8)}"
+              f"   max dev {float(np.max(np.abs(p_t - p_g))):.3e}")
         report = circ.report()
         print(f"Circuit: {' -> '.join(report['gates_applied'])}")
         print(f"  Encoding: {report['encoding']}, anyons: {report['n_anyons']}, dim: {report['dim']}")
