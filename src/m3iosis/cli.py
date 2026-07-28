@@ -192,6 +192,85 @@ def main():
 
     qc_parser.set_defaults(func=run_qc)
 
+
+    # --- triple subcommand ---
+    triple_parser = subparsers.add_parser("triple", help="Triple Frame von Neumann Superoperator Algebra")
+    triple_parser.add_argument("--report", action="store_true",
+                               help="Full structural report")
+    triple_parser.add_argument("--expand", type=str, metavar="TYPE",
+                               help="Expand a Shavian type or primitive (e.g. sure, Ħ, monad)")
+    triple_parser.add_argument("--word", type=str, choices=["A", "B", "root", "full"],
+                               help="Print glyph word for protocol variant")
+    triple_parser.add_argument("--verify", nargs="?", const="all", metavar="TYPE",
+                               help="Verify Frobenius closure (all or specific type)")
+    triple_parser.add_argument("--types", action="store_true",
+                               help="Type expansion table")
+    triple_parser.add_argument("--cycle", action="store_true",
+                               help="IMASM tuple↔word round-trip")
+    triple_parser.add_argument("--path", action="store_true",
+                               help="Edit distance between Protocol A and B")
+    triple_parser.add_argument("--bridge", action="store_true",
+                               help="Triple frame ↔ Fibonacci manifold bridge")
+    triple_parser.add_argument("--check", type=str, metavar="WORD",
+                               help="Check Frobenius closure of a custom glyph word")
+    def run_triple(args):
+        from m3iosis.triple_frame import TripleFrameAlgebra, TripleFrameManifold
+        tf = TripleFrameAlgebra()
+        if args.report:
+            print(tf.protocol_report())
+        elif args.expand:
+            tp = tf.expand(args.expand)
+            print(f"{tp.primitive_axis}={tp.value_glyph}  →  {tp.shavian}")
+            print(f"  Word:  {tp.word}")
+            print(f"  Ops:   {tp.n_ops}")
+            print(f"  ρ:     {tp.rho}")
+            print(f"  Read:  {tp.domain_reading}")
+        elif args.word:
+            if args.word == "full":
+                w = tf.full_word()
+                print(f"Full word ({len(w)} glyphs):")
+                print(w)
+            elif args.word == "root":
+                from m3iosis.triple_frame import ROOT_WORD
+                print(''.join(oc.glyph for oc in ROOT_WORD))
+            else:
+                print(tf.protocol_word(args.word))
+        elif args.verify is not None:
+            if args.verify == "all":
+                results = tf.verify_all_types()
+                for name, r in results.items():
+                    status = "✓" if r["closed"] else "✗"
+                    print(f"  {status} {name:<8} ρ={r['rho']:<8} {r['verdict']}")
+            else:
+                result = tf.check_frobenius(tf.expand(args.verify).opcodes)
+                for k, v in result.items():
+                    print(f"  {k}: {v}")
+        elif args.types:
+            print(tf.type_table())
+        elif args.cycle:
+            result = tf.imasm_cycle()
+            print(f"IMASM cycle: {result['n_exact']}/{result['total']} exact")
+            print(f"  Ambiguous: {result['n_ambiguous']} (Ř: ear/tot)")
+            print(f"  {result['note']}")
+        elif args.path:
+            result = tf.protocol_path()
+            print(f"Protocol A → B: {result['distance']} edits")
+            print(f"  A: {result['protocol_a']}")
+            print(f"  B: {result['protocol_b']}")
+            print(f"  {result['note']}")
+        elif args.bridge:
+            tfb = TripleFrameManifold()
+            print(tfb.bridge_report())
+        elif args.check:
+            from m3iosis.triple_frame import Opcode
+            word = [Opcode.from_glyph(g) for g in args.check]
+            for k, v in tf.check_frobenius(word).items():
+                print(f"  {k}: {v}")
+        else:
+            triple_parser.print_help()
+
+    triple_parser.set_defaults(func=run_triple)
+
     # --- info subcommand ---
     info_parser = subparsers.add_parser("info", help="System and algebra information")
     info_parser.set_defaults(
