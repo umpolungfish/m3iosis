@@ -138,3 +138,40 @@ The fusion space V_n = Hom(tau^n, 1) has dimension F_{n-1} (Fibonacci numbers). 
 | 3 | 1       | 0      |
 | 4 | 2       | 1      |
 | 7 | 8       | 3      |
+
+### `braid-grammar`
+Braid Grammar Bridge — Fibonacci braid words to Imscribing Grammar tuples.
+
+*   `word...`: Braid word as signed Artin generators (positive = sigma_k, negative = sigma_k^{-1}). Required positional argument.
+*   `--strands N`, `-n N`: Number of strands (default: 4, dim V_4 = 2 = 1 qubit).
+
+Takes a braid word and evaluates it on the Fibonacci braid group representation in the fusion space V_n = Hom(tau^n, 1). Extracts topological invariants (writhe, braid trace, eigenvalues, Jones polynomial, fusion space dimension) and maps each to a grammar primitive value. Outputs the 12-glyph canonical tuple and a Frobenius closure verdict (μ∘δ = id).
+
+**Grammar primitive mapping:**
+| Invariant | Slot | Rationale |
+|-----------|------|-----------|
+| Fusion space dimension | Ð | Dimensionality of the fusion space |
+| Crossing count / isotopy class | Þ | Topological complexity of the braid |
+| Unitary braid representation | Ř | Dagger/adjoint coupling of the rep |
+| Topological spin / eigenvalue spectrum | Φ | Self-statistics parity |
+| Jones polynomial evaluation | ƒ | Quantum fidelity of the braid closure |
+| Braid word complexity | Ç | Kinetics of the braid operation |
+| Number of anyons | Γ | Cardinality of the fusion input |
+| Generator multiplication order | ɢ | Sequential vs broadcast composition |
+| Frobenius closure (μ∘δ = id) | φ̂ | Criticality — self-modeling fixed point |
+| Writhe (signed crossing sum) | Ħ | Chirality — braid orientation |
+| Fusion outcome multiplicity | Σ | Stoichiometry of fusion channels |
+| Total eigenvalue winding | Ω | Topological winding invariant |
+
+**Examples:**
+```bash
+m3 braid-grammar 1 2 1                       # Yang-Baxter → ⟨𐑨𐑥𐑑𐑹𐑱𐑧𐑲𐑜⊙𐑖𐑕𐑴⟩ (CLOSED)
+m3 braid-grammar 1 2 1 2 1                   # Longer braid → ⟨𐑨𐑥𐑑𐑹𐑞𐑤𐑲𐑠𐑣𐑫𐑕𐑴⟩ (OPEN)
+m3 braid-grammar -1 -2 -1                    # Inverse → same tuple as YB (writhe sign not in glyphs)
+m3 braid-grammar --strands 7 1 2 3 2 1       # 7 strands, dim V_7 = 8 = 3 qubits
+m3 braid-grammar                             # Empty word → identity braid
+```
+
+Frobenius closure (CLOSED/OPEN) indicates whether the braid's unitary representation satisfies μ∘δ = id (unitary + real trace). CLOSED means the braid is self-adjoint in the statistical sense; OPEN means the braid carries non-trivial topological winding.
+
+**Source:** `m3iosis.braid_grammar_bridge.BraidGrammarAnalyzer`

@@ -97,7 +97,7 @@ def fib_command(args):
         return
 
     if args.sim:
-        simulate_braid(args.word)
+        simulate_braid(args.word, getattr(args, "strands", 3))
         return
 
     if args.manifold:
@@ -154,7 +154,7 @@ def main():
                             help="Braid word to simulate")
     sim_parser.add_argument("--strands", type=int, default=3,
                             help="Number of strands")
-    sim_parser.set_defaults(func=lambda a: simulate_braid(a.word))
+    sim_parser.set_defaults(func=lambda a: simulate_braid(a.word, a.strands))
 
     # --- manifold subcommand ---
     man_parser = subparsers.add_parser("manifold", help="Topological manifold operations")
@@ -274,6 +274,443 @@ def main():
             triple_parser.print_help()
 
     triple_parser.set_defaults(func=run_triple)
+
+
+    # --- hqe subcommand ---
+    hqe_parser = subparsers.add_parser("hqe", 
+        help="Holonomic Quasi-Ergodic Quantale -- MBL holonomy algebra",
+        description="""Holonomic Quasi-Ergodic Quantale: non-Abelian Berry holonomy
+in a Many-Body Localized phase. O_inf (Special Frobenius).
+
+Commands:
+  --report       Full structural report (holonomy + MBL + consciousness)
+  --holonomy     Non-Abelian Berry holonomy computation
+  --mbl          Many-Body Localization diagnostics
+  --consciousness Consciousness score (C-score)
+  --tuple        Print grammar tuple only
+  --distance SYS Distance to PFA, winding, or clink (or all)
+  --meet TUPLE   Compute meet with a 12-glyph tuple
+  --join TUPLE   Compute join with a 12-glyph tuple
+  --json         JSON output format
+""")
+
+    hqe_parser.add_argument("--report", action="store_true",
+                            help="Full structural report")
+    hqe_parser.add_argument("--holonomy", action="store_true",
+                            help="Non-Abelian Berry holonomy computation")
+    hqe_parser.add_argument("--mbl", action="store_true",
+                            help="Many-Body Localization diagnostics")
+    hqe_parser.add_argument("--consciousness", action="store_true",
+                            help="Consciousness score (C-score)")
+    hqe_parser.add_argument("--tuple", action="store_true",
+                            help="Print grammar tuple")
+    hqe_parser.add_argument("--json", action="store_true",
+                            help="JSON output format")
+    hqe_parser.add_argument("--distance", type=str, nargs="?", const="all", metavar="SYS",
+                            help="Distance to system: pfa, winding, clink, or all")
+    hqe_parser.add_argument("--meet", type=str, metavar="TUPLE",
+                            help="Compute meet with a 12-glyph tuple")
+    hqe_parser.add_argument("--join", type=str, metavar="TUPLE",
+                            help="Compute join with a 12-glyph tuple")
+    def run_hqe(args):
+        from m3iosis.holonomic_quantale import hqe_main
+        hqe_args = {}
+        if args.report: hqe_args["report"] = True
+        if args.holonomy: hqe_args["holonomy"] = True
+        if args.mbl: hqe_args["mbl"] = True
+        if args.consciousness: hqe_args["consciousness"] = True
+        if args.tuple: hqe_args["tuple"] = True
+        if args.json: hqe_args["json"] = True
+        if args.distance: hqe_args["distance"] = args.distance
+        if args.meet: hqe_args["meet"] = args.meet
+        if args.join: hqe_args["join"] = args.join
+        print(hqe_main(hqe_args))
+
+    hqe_parser.set_defaults(func=run_hqe)
+
+
+    # --- braid-grammar subcommand ---
+    bg_parser = subparsers.add_parser("braid-grammar", 
+        help="Braid Grammar Bridge — Fibonacci braid words to grammar tuples",
+        description="""Map a Fibonacci anyon braid word to its Imscribing Grammar tuple.
+
+Takes a braid word as signed Artin generators (positive = sigma_k, negative = sigma_k^{-1})
+and evaluates it on the n-strand Fibonacci braid group representation in the fusion space
+V_n = Hom(tau^n, 1).  Extracts topological invariants (writhe, braid trace, eigenvalues,
+Jones polynomial, fusion space dimension) and maps each to a grammar primitive value.
+
+Grammar primitive mapping:
+  0369 Dimension (D)     <- fusion space dimension
+  028C Topology (T)       <- braid isotopy class (crossing count)
+  01D9 Coupling (R)       <- unitary braid group representation
+  0131 Parity (P)         <- topological spin / eigenvalue spectrum
+  0022 Fidelity (F)       <- Jones polynomial evaluation
+  007B Kinetics (K)       <- braid word complexity
+  0154 Cardinality (G)    <- number of anyons
+  0060 Composition (Gm)   <- generator multiplication order
+  2299 Criticality (phi)  <- Frobenius closure (mu∘delta = id)
+  012B Chirality (H)      <- writhe / signed crossing sum
+  0159 Stoichiometry (S)  <- fusion outcome multiplicity
+  2126 Winding (Omega)    <- total eigenvalue winding
+
+Output: 12-glyph tuple ⟨DTRPFCGGphiHSO⟩ and Frobenius closure verdict.
+""",
+        epilog="""Examples:
+  m3 braid-grammar 1 2 1                     # Yang-Baxter braid on 4 strands
+  m3 braid-grammar -1 -2 -1                  # Inverse Yang-Baxter
+  m3 braid-grammar 1 2 1 2 1                # Longer braid word
+  m3 braid-grammar --strands 7 1 2 3 2 1    # 7 strands, dim V_7 = 8 (3 qubits)
+  m3 braid-grammar                           # empty word: identity braid
+
+Frobenius closure indicates whether the braid word's unitary representation
+satisfies mu∘delta = id (unitary + real trace).  When CLOSED the braid is
+self-adjoint in the statistical sense; when OPEN the braid carries non-trivial
+topological winding.
+""")
+    bg_parser.add_argument("word", type=int, nargs="+",
+                           help="Braid word as signed Artin generators")
+    bg_parser.add_argument("--strands", "-n", type=int, default=4,
+                           help="Number of strands (default: 4, dim V_4 = 2)")
+    bg_parser.set_defaults(
+        func=lambda a: (
+            __import__("m3iosis.braid_grammar_bridge", fromlist=["BraidGrammarAnalyzer"]).BraidGrammarAnalyzer
+            .print_report(
+                __import__("m3iosis.braid_grammar_bridge", fromlist=["BraidGrammarAnalyzer"]).BraidGrammarAnalyzer
+                .analyze_word(a.word, a.strands)
+            )
+        )
+    )
+
+
+    # --- hop subcommand ---
+    hop_parser = subparsers.add_parser("hop", 
+        help="Universe Hopping Engine — cross-framework transport",
+        description="""Universe Hopping Engine: manifest tuples in all frameworks,
+hop between tuples through the crystal of types, and compute geodesic paths.
+
+Commands:
+  --tuple TUPLE            Manifest a tuple in all frameworks
+  --report TUPLE           Full universe-hopping report
+  --hop-origin TUPLE       Start tuple for hopping
+  --hop-target TUPLE       Target tuple for hopping
+  --geodesic               Use A* for exact minimal-cost path
+  --compare-a TUPLE        First tuple for comparison
+  --compare-b TUPLE        Second tuple for comparison
+  --framework-matrix       All pairwise distances between anchors
+  --reverse-framework FW   Framework for reverse parameter lookup
+  --reverse-params JSON    Target parameters as JSON dictionary
+  --json                   Output as JSON
+
+Frameworks available:
+  hqe                  Holonomic Quasi-Ergodic Quantale
+  fibonacci_braid      Fibonacci Anyon Braid Algebra
+  berry_holonomy       Non-Abelian Berry Holonomy (U(n))
+  mbl_phase            Many-Body Localization Phase Diagram
+  triple_frame         Triple Frame Von Neumann Algebra
+""")
+    hop_parser.add_argument("--tuple", type=str, metavar="TUPLE",
+                            help="Manifest a tuple in all frameworks")
+    hop_parser.add_argument("--report", type=str, metavar="TUPLE",
+                            help="Full universe-hopping report")
+    hop_parser.add_argument("--hop-origin", type=str, metavar="TUPLE",
+                            help="Start tuple for hopping")
+    hop_parser.add_argument("--hop-target", type=str, metavar="TUPLE",
+                            help="Target tuple for hopping")
+    hop_parser.add_argument("--geodesic", action="store_true",
+                            help="Use A* for exact minimal-cost path")
+    hop_parser.add_argument("--compare-a", type=str, metavar="TUPLE",
+                            help="First tuple for comparison")
+    hop_parser.add_argument("--compare-b", type=str, metavar="TUPLE",
+                            help="Second tuple for comparison")
+    hop_parser.add_argument("--framework-matrix", action="store_true",
+                            help="All pairwise distances between anchors")
+    hop_parser.add_argument("--reverse-framework", type=str,
+                            help="Framework for reverse parameter lookup")
+    hop_parser.add_argument("--reverse-params", type=str, default="{}",
+                            help="Target parameters as JSON")
+    hop_parser.add_argument("--json", action="store_true",
+                            help="Output as JSON")
+    def run_hop(args):
+        from m3iosis.universe_hopper import universe_hopper_main
+        hop_args = {}
+        if args.tuple: hop_args["tuple"] = args.tuple
+        if args.report: hop_args["report"] = args.report
+        if args.hop_origin: hop_args["hop_origin"] = args.hop_origin
+        if args.hop_target: hop_args["hop_target"] = args.hop_target
+        if args.geodesic: hop_args["geodesic"] = True
+        if args.compare_a: hop_args["compare_a"] = args.compare_a
+        if args.compare_b: hop_args["compare_b"] = args.compare_b
+        if args.framework_matrix: hop_args["framework_matrix"] = True
+        if args.reverse_framework: hop_args["reverse_framework"] = args.reverse_framework
+        if args.reverse_params:
+            import json
+            try:
+                hop_args["reverse_params"] = json.loads(args.reverse_params)
+            except:
+                hop_args["reverse_params"] = {}
+        if args.json: hop_args["json"] = True
+        print(universe_hopper_main(hop_args))
+
+    hop_parser.set_defaults(func=run_hop)
+# -*- M3Iosis CLI: gematria subcommand registration -*-
+# This is the gematria subcommand block to be inserted into cli.py
+# after the hop subcommand and before the info subcommand.
+
+    # --- dyson subcommand ---
+    dyson_parser = subparsers.add_parser("dyson",
+        help="Double-Ramified Dyson Algebra — Dyson β-ensemble + DR cycle tool",
+        description="""Double-Ramified Dyson Algebra (DRDA): Dyson's threefold way (β=1/2/4)
+combined with the double ramification cycle from moduli spaces.
+
+Commands:
+  --report            Full report (level spacing + form factor + DR cycle + Frobenius)
+  --level-spacing     Wigner surmise & gap ratio for β=1,2,4
+  --form-factor       Spectral form factor K(τ)
+  --frobenius         Frobenius condition μ∘δ=id verification
+  --dr-cycle          Double Ramification cycle structure constants
+  --tuple             Print grammar tuple
+  --distance          Distances to sibling systems
+  --json              JSON output format
+  --beta N            Dyson β value: 1 (GOE), 2 (GUE), 4 (GSE) (default: 2)
+  --N N               Matrix size (default: 100)
+  --genus N           Genus of the DR cycle (default: 0)
+""")
+
+    dyson_parser.add_argument("--report", action="store_true")
+    dyson_parser.add_argument("--level-spacing", action="store_true")
+    dyson_parser.add_argument("--form-factor", action="store_true")
+    dyson_parser.add_argument("--frobenius", action="store_true")
+    dyson_parser.add_argument("--dr-cycle", action="store_true")
+    dyson_parser.add_argument("--tuple", action="store_true")
+    dyson_parser.add_argument("--json", action="store_true")
+    dyson_parser.add_argument("--beta", type=int, default=2, choices=[1,2,4])
+    dyson_parser.add_argument("--N", type=int, default=100)
+    dyson_parser.add_argument("--genus", type=int, default=0)
+    dyson_parser.add_argument("--distance", type=str, nargs="?", const="all")
+
+    def run_dyson(args):
+        from m3iosis.dyson_algebra import drda_cli as _drda_cli
+        _drda_cli(args)
+
+    dyson_parser.set_defaults(func=run_dyson)
+
+    # --- afdmc subcommand ---
+    afdmc_parser = subparsers.add_parser("afdmc",
+        help="Asymptotic Frozen-Disordered Monadic Cohomologies -- MBL cohomology tool",
+        description="""Asymptotic Frozen-Disordered Monadic Cohomologies (AFDMC).
+
+Cohomology of the MBL localization monad, approaching criticality.
+
+Commands:
+  --report         Full structural report (cohomology + spectral + filtration)
+  --cohomology     Monadic cohomology groups (H⁰-H³)
+  --spectral       E₂ spectral sequence collapse diagnostic
+  --filtration     Asymptotic filtration analysis (eps → 0⁺)
+  --obstructions   Thermalization obstruction classification
+  --mbl            MBL diagnostics (gap ratio, l-bits)
+  --tuple          Print grammar tuple
+  --distance       Distances to sibling systems (hqe, hombroad)
+  --json           JSON output format
+  --size N         System size (default: 8)
+  --disorder W     Disorder strength (default: 5.0)
+  --W_c Wc         Critical disorder strength (default: 8.0)
+  --steps N        Filtration steps (default: 5)
+  --seed N         RNG seed
+""")
+
+    afdmc_parser.add_argument("--report", action="store_true",
+                              help="Full structural report")
+    afdmc_parser.add_argument("--cohomology", action="store_true",
+                              help="Monadic cohomology groups (H⁰-H³)")
+    afdmc_parser.add_argument("--spectral", action="store_true",
+                              help="E₂ spectral sequence collapse diagnostic")
+    afdmc_parser.add_argument("--filtration", action="store_true",
+                              help="Asymptotic filtration analysis")
+    afdmc_parser.add_argument("--obstructions", action="store_true",
+                              help="Thermalization obstruction classification")
+    afdmc_parser.add_argument("--mbl", action="store_true",
+                              help="MBL diagnostics (gap ratio, l-bits)")
+    afdmc_parser.add_argument("--tuple", action="store_true",
+                              help="Print grammar tuple")
+    afdmc_parser.add_argument("--json", action="store_true",
+                              help="JSON output format")
+    afdmc_parser.add_argument("--size", type=int, default=8,
+                              help="System size")
+    afdmc_parser.add_argument("--disorder", type=float, default=5.0,
+                              help="Disorder strength")
+    afdmc_parser.add_argument("--W_c", type=float, default=8.0,
+                              help="Critical disorder strength")
+    afdmc_parser.add_argument("--steps", type=int, default=5,
+                              help="Filtration steps")
+    afdmc_parser.add_argument("--distance", type=str, nargs="?", const="all",
+                              metavar="SYS", help="Distance to sibling systems")
+    afdmc_parser.add_argument("--seed", type=int, default=None,
+                              help="RNG seed")
+
+    def run_afdmc(args):
+        from m3iosis.afdmc import afdmc_cli as _afdmc_cli
+        _afdmc_cli(args)
+
+    afdmc_parser.set_defaults(func=run_afdmc)
+
+    # --- gematria subcommand ---
+    gematria_parser = subparsers.add_parser("gematria",
+        help="Hypergematria — IMASM word analysis via the lattice flow engine",
+        description="""IMASM word hypergematria: 177-dim rotation-invariant signature,
+weight flow, banked count, lattice cycle, ring transitions, and steering.
+
+Examples:
+  m3 gematria --word '⊢>◇+⊙●=¬⊣' --report   Full analysis of the monad word
+  m3 gematria --word '⊢>◇+⊙●=¬⊣' --signature  177-dim signature only
+  m3 gematria --word '⊢>◇+⊙●=¬⊣' --flow       Weight flow only
+  m3 gematria --word '⊢>◇+⊙●=¬⊣' --cycle      Lattice cycle orbit
+  m3 gematria --word '⊢>◇+⊙●=¬⊣' --steer T    Steering to register T
+  m3 gematria --word '+⊙●' --json             JSON output
+
+Common words:
+  ⊢>◇+⊙●=¬⊣   Monad core (period 9, all landings in T)
+  ⊢⊙◇+×⊞●=><¬⊣  Protocol A (emergence/annihilation at EP)
+  ⊢⊙◇>+<×●=⊞¬⊣  Protocol B (holographic round-trip)
+  ◇>⊙●           Short: open, forward, self-model, fuse (seed test)
+""")
+    gematria_parser.add_argument("--word", "-w", type=str, required=True,
+                                 help="IMASM word as glyphs (e.g. '⊢>◇+⊙●=¬⊣')")
+    gematria_parser.add_argument("--report", "-r", action="store_true",
+                                 help="Full analysis report")
+    gematria_parser.add_argument("--signature", "-s", action="store_true",
+                                 help="177-dim rotation-invariant signature")
+    gematria_parser.add_argument("--flow", "-f", action="store_true",
+                                 help="Weight flow analysis")
+    gematria_parser.add_argument("--banked", "-b", action="store_true",
+                                 help="Banked count check")
+    gematria_parser.add_argument("--cycle", "-c", action="store_true",
+                                 help="Lattice cycle orbit")
+    gematria_parser.add_argument("--transitions", "-t", action="store_true",
+                                 help="Ring transitions (with closing edge)")
+    gematria_parser.add_argument("--steer", type=str, nargs="?", const="T",
+                                 metavar="TARGET",
+                                 help="Steer spectrum to target register (default: T)")
+    gematria_parser.add_argument("--depth", type=int, default=1,
+                                 help="Steer insertion depth (default: 1)")
+    gematria_parser.add_argument("--json", "-j", action="store_true",
+                                 help="JSON output format")
+    gematria_parser.add_argument("--all", "-a", action="store_true",
+                                 help="Run all analyses")
+
+    def run_gematria(args):
+        import json as _json
+        from m3iosis.gematria import (
+            hyper_gematria, weight_flow, banked_count,
+            lattice_cycle, ring_transitions, steer, full_report, parse, render_steps
+        )
+
+        word = args.word
+        if args.all or args.report:
+            print(full_report(word))
+            return
+
+        results = {}
+        did_anything = False
+
+        if args.signature or args.json and not any([args.flow, args.banked, args.cycle, args.transitions, args.steer]):
+            did_anything = True
+            hg = hyper_gematria(word)
+            if hg.get("status") == "error":
+                print(f"Error: {hg['error']}")
+                return
+            results["signature"] = hg
+            if not args.json:
+                print(f"--- 177-DIM SIGNATURE ---")
+                print(f"  Dimension:  {hg['dimension']}")
+                print(f"  Invariant:  {hg['every_coordinate_rotation_invariant']}")
+                print(f"  Census:     {', '.join(f'{k}:{v}' for k,v in hg['opcode_census'].items())}")
+                print(f"  Scalars:    len={hg['scalars']['length']}, depth={hg['scalars']['max_depth']}, "
+                      f"ord={hg['scalars']['total_ordinal']}")
+                print(f"  Landings:   {', '.join(f'{k}:{v}' for k,v in hg['landing_spectrum'].items())}")
+
+        if args.flow:
+            did_anything = True
+            wf = weight_flow(word)
+            if wf.get("status") == "error":
+                print(f"Error: {wf['error']}")
+                return
+            results["weight_flow"] = wf
+            if not args.json:
+                print(f"--- WEIGHT FLOW ---")
+                print(f"  Final: {wf['final_register']}  deposits={wf['deposits']}  "
+                      f"cleared={wf['cleared']}  restored={wf['restored']}  "
+                      f"seeded={wf['seeded']}  inert={wf['inert']}")
+                print(f"  Surviving: {wf['surviving']}")
+
+        if args.banked:
+            did_anything = True
+            bc = banked_count(word)
+            if bc.get("status") == "error":
+                print(f"Error: {bc['error']}")
+                return
+            results["banked_count"] = bc
+            if not args.json:
+                print(f"--- BANKED COUNT ---")
+                for k, v in bc.items():
+                    if k != "status":
+                        print(f"  {k}: {v}")
+
+        if args.cycle:
+            did_anything = True
+            cy = lattice_cycle(word)
+            if cy.get("status") == "error":
+                print(f"Error: {cy['error']}")
+                return
+            results["lattice_cycle"] = cy
+            if not args.json:
+                print(f"--- LATTICE CYCLE ---")
+                print(f"  Period: {cy['period']}")
+                print(f"  Phase-bearing: {', '.join(cy['phase_bearing'])}")
+                print(f"  Landings: {cy['landing_by_cut']}")
+
+        if args.transitions:
+            did_anything = True
+            tr = ring_transitions(word)
+            if tr.get("status") == "error":
+                print(f"Error: {tr['error']}")
+                return
+            results["ring_transitions"] = tr
+            if not args.json:
+                print(f"--- RING TRANSITIONS ---")
+                print(f"  Length: {tr['length']}  ring: {tr['ring_count']}  linear: {tr['linear_count']}")
+                print(f"  Wrap: {tr['wrap']}")
+                for edge, count in sorted(tr['ring'].items()):
+                    print(f"    {edge}: {count}")
+
+        if args.steer is not None:
+            did_anything = True
+            st = steer(word, target=args.steer, depth=args.depth)
+            if st.get("status") == "error":
+                print(f"Error: {st['error']}")
+                return
+            results["steer_spectrum"] = st
+            if not args.json:
+                print(f"--- STEER SPECTRUM (target={args.steer}, depth={args.depth}) ---")
+                b = st.get("base", {})
+                print(f"  Base:       {b.get('word','')}  {b.get('spectrum',{})}  share={b.get('share')}")
+                print(f"  Searched:   {st.get('searched')}   best share={st.get('best_share')}")
+                print(f"  {'word':<18}{'share':>7}{'restored':>10}{'live':>6}  spectrum")
+                for h in st.get("best", [])[:5]:
+                    live = "no" if h.get("vacuous") else "yes"
+                    print(f"  {h['word']:<18}{h['share']:>7}{h['restored']:>10}{live:>6}  {h['spectrum']}")
+                print(f"  {st.get('invariant_note','')}")
+
+        if not did_anything:
+            # Default: full report
+            print(full_report(word))
+
+        if args.json and results:
+            print(_json.dumps(results, indent=2, default=str, ensure_ascii=False))
+
+    gematria_parser.set_defaults(func=run_gematria)
+
+
+
 
     # --- info subcommand ---
     info_parser = subparsers.add_parser("info", help="System and algebra information")
