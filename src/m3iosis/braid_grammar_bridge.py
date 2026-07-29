@@ -226,8 +226,31 @@ class BraidGrammarAnalyzer:
         writhe = self._compute_writhe(word)
         
         # 4. Fusion space dimension
+        #
+        # This is dim Hom(tau^n, 1) = F_{n-1}: the VACUUM sector only. At three
+        # strands that is one-dimensional, so the braid representation is 1x1,
+        # sigma_1 and sigma_2 commute identically, and ||[s1,s2]|| = 0.000000 —
+        # every non-Abelian invariant reported for a 3-strand word is a property
+        # of a trivial rep rather than of Fibonacci anyons. The usual B_3
+        # statement (sigma_1 sigma_2 sigma_1 |tau> = a|1tau> + b|tau tau>, with
+        # ||[s1,s2]|| = 1.799) lives in Hom(tau^3, tau), the total-charge-tau
+        # sector, which is 2-dimensional. The sectors interleave: Hom(tau^n, tau)
+        # is F_n, so it matches Hom(tau^{n+1}, 1) in dimension, and 4 strands
+        # here reproduces that 1.798907 exactly.
+        #
+        # Nothing below can tell the difference, so a degenerate fusion space is
+        # flagged rather than silently carried into the tuple.
         from m3iosis.fibonacci_anyon_algebra import fusion_space_dimension
         fusion_dim = fusion_space_dimension(n_strands)
+        if fusion_dim < 2:
+            import warnings
+            warnings.warn(
+                f"fusion space Hom(tau^{n_strands}, 1) is {fusion_dim}-dimensional: "
+                f"the braid representation is trivial and its non-Abelian "
+                f"invariants are meaningless. Use n_strands >= 4 for the "
+                f"vacuum sector, which carries the same space as "
+                f"Hom(tau^{n_strands}, tau).",
+                RuntimeWarning, stacklevel=2)
         
         # 5. Quantum dimension
         quantum_dim = fusion_dim

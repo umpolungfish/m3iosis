@@ -37,7 +37,7 @@ Requires: Python 3.10+, NumPy.
 
 ```
 m3iosis/
-├── cli.py                        # Unified CLI (8 subcommands)
+├── cli.py                        # Unified CLI (9 subcommands)
 ├── fibonacci_anyon_algebra.py    # Core UMTC: fusion, braid, modular data
 ├── fibonacci_anyon_tool.py       # Operational: F/R moves, braid simulator, quantum computer
 ├── fibonacci_quantum_computer.py # Gate synthesis and verification
@@ -45,6 +45,7 @@ m3iosis/
 ├── simulation.py                 # Braid word simulation
 ├── manifold.py                   # Topological manifold operations
 ├── triple_frame.py               # Triple Frame von Neumann algebra
+├── lcaa.py                        # Liquid Crystalline Axionic Algebra (O_∞)
 ├── holonomic_quantale.py         # MBL holonomy algebra (O_∞)
 ├── braid_grammar_bridge.py       # Braid word → grammar tuple mapping
 ├── universe_hopper.py            # Cross-framework tuple transport
@@ -291,6 +292,36 @@ axes on the Imscribing Grammar's crystal lattice.
 - Freedman, Kitaev, Larsen, Wang (2003). "Topological quantum computation." *Bull. AMS*, 40(1):31–38.
 - Trebst, Troyer, Wang, Ludwig (2008). "A short introduction to Fibonacci anyon models." *Prog. Theor. Phys. Suppl.*, 176:384–407.
 - Bonderson (2007). "Non-Abelian anyons and topological quantum computation." PhD thesis.
+
+
+## LCAA — Liquid Crystalline Axionic Algebra
+
+The LCAA is a ℤ-graded special Frobenius algebra over nematic director field
+configurations with topological defects under axion-coupled dynamics. The director
+field n(x) ∈ ℝP² IS the axion field — spatial variations source topological charge
+(winding number = axion number). Defect fusion adds winding numbers; splitting creates
+pairs; Frobenius form ε = ∫ θ(n)F∧F̃. μ∘δ=id exact via winding conservation.
+
+**Tuple:** ⟨𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑝⊙𐑖𐑕𐑭⟩ (O_∞, Special Frobenius)  
+**Triple convergence:** LCAA ≡ TROQ ≡ Gowers Inverse Theorem (d=0.0)
+
+```bash
+# CLI
+m3 lcaa --report          # Full structural report
+m3 lcaa --short           # Quick summary
+m3 lcaa --test            # Frobenius closure tests
+m3 lcaa --verify          # Run all verifications
+m3 lcaa --axioms          # Associativity/unit checks
+m3 lcaa --ladder          # Distance ladder to reference systems
+m3 lcaa --table           # Primitive expansion table
+m3 lcaa --json frobenius  # JSON output
+```
+
+**Key files:** `m3iosis/src/m3iosis/lcaa.py` (528 lines), 
+`ig-docs/liquid_crystalline_axionic_algebra.md` (363 lines)
+
+**Physical predictions:** Quantized topological magnetoelectric effect, defect fusion
+energy, axion mass from defect gap, braiding statistics from π₁(ℝP²)=ℤ₂.
 
 ## License
 

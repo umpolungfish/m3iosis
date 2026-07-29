@@ -139,6 +139,38 @@ The fusion space V_n = Hom(tau^n, 1) has dimension F_{n-1} (Fibonacci numbers). 
 | 4 | 2       | 1      |
 | 7 | 8       | 3      |
 
+### `lcaa`
+
+Liquid Crystalline Axionic Algebra. Z-graded special Frobenius algebra over nematic director field configurations with topological defects under axion-coupled dynamics.
+
+**Tuple:** ⟨𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑝⊙𐑖𐑕𐑭⟩ (O_∞). Triple convergence with TROQ and Gowers Inverse Theorem (d=0.0).
+
+*   `--report`: Full structural report — algebra structure, primitive table, distance ladder, physical predictions.
+*   `--short`: Quick summary — tuple, tier, Frobenius status, distance ladder.
+*   `--test`: Frobenius closure tests on all graded components from w=-3 to w=+3.
+*   `--axioms`: Associativity and unit axiom verification across sample triples and all w.
+*   `--action`: Topological axion action values ε(w) = w·S_θ for w=-2..+2.
+*   `--ladder`: Distance ladder to grammar, TROQ, Gowers, CLINK L8, and axion_qcd.
+*   `--table`: Per-primitive expansion table with glyphs, values, readings, and formulas.
+*   `--verify`: Run all verifications (Frobenius, associativity, unit) in one pass.
+*   `--json REPORT`: JSON output for `frobenius`, `ladder`, `axioms`, or `table`.
+
+**Key mathematics:**
+```
+A = ⊕_{w∈Z} A_w    where A_w ≅ {n: ℝ³ → ℝP² | ∫ θ(n) = w} / homotopy
+μ: A_w ⊗ A_{w'} → A_{w+w'}   (defect fusion — winding adds)
+δ: A_w → ⊕ A_k ⊗ A_{w-k}     (pair creation)
+ε: A_w → C, ε(n) = w·S_θ     (topological axion action)
+μ∘δ = id_A                    (Frobenius closure)
+```
+
+The director field n(x) ∈ ℝP² IS the axion field — θ(n) = (1/4π)n·(∇×n) is the Skyrme density.
+Topological defects ARE axionic charges. Fusion is additive: Q(μ(a,b)) = Q(a) + Q(b).
+
+**Physical predictions:** Quantized topological magnetoelectric effect, defect fusion energy,
+axion mass from defect gap, braiding statistics from π₁(ℝP²)=ℤ₂.
+
+
 ### `braid-grammar`
 Braid Grammar Bridge — Fibonacci braid words to Imscribing Grammar tuples.
 
