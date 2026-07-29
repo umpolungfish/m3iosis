@@ -373,8 +373,21 @@ class BraidGrammarAnalyzer:
             glyphs["Σ"] = "𐑳"  # many heterogeneous (multiple outcomes)
         
         # Ω (Winding) ← total winding number from eigenvalues
-        # Sum of phases in full windings
-        total_phase = sum(phases_deg) / 360.0
+        # Sum of phases in full windings.
+        #
+        # phases_deg is wrapped into [0, 360) for display, and summing THAT is
+        # wrong here. An eigenvalue whose true phase is zero-from-below —
+        # 1 - 1e-16j, which is what the identity braid produces — wraps to
+        # 359.9999… and contributes a spurious full turn. The identity on 7
+        # strands has 8 eigenvalues, so the same braid spelled two ways scored
+        # anywhere from 0 to 5 turns depending only on float sign dust, and the
+        # bins below turned that into 𐑷, 𐑭 or 𐑟 for a braid with no winding at
+        # all. It also made Ω rise with strand count, since a larger fusion
+        # space offers more eigenvalues to wrap.
+        #
+        # A winding is signed and must be summed unwrapped: cmath.phase already
+        # returns (-180, 180], which is the branch we want.
+        total_phase = sum((p + 180.0) % 360.0 - 180.0 for p in phases_deg) / 360.0
         abs_winding = abs(total_phase)
         if abs_winding < 0.01:
             glyphs["Ω"] = "𐑷"  # trivial

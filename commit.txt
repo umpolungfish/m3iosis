@@ -1,17 +1,19 @@
-A word that is not a braid on n strands is refused, not truncated.
+Sum eigenvalue phases on the signed branch when computing the winding
 
-B_n has generators sigma_1 .. sigma_{n-1}, so on three strands there is no
-sigma_3. Given one, the evaluator stopped at it and returned the product of the
-prefix, while the writhe was still summed over the whole word. A 33-crossing
-word containing sigma_3 on three strands reported the invariant of its first
-five crossings, and reported it in the same format and with the same confidence
-as a correct answer. Nothing about the output said a word had been discarded.
+phases_deg is wrapped into [0, 360) for display, and the Omega mapping summed
+that as a total winding. An eigenvalue whose true phase is zero-from-below
+(1 - 1e-16j, which is what the identity braid produces) wraps to 359.9999 and
+contributes a spurious full turn.
 
-validate_braid_word rejects with the offending generator, the range that does
-exist, and the strand count the word actually needs. The matrix loop skips
-rather than breaks, so a missed validation degrades visibly instead of
-plausibly.
+The consequence was that Omega was not a braid invariant and not even a function
+of the resulting unitary. sigma_1 and sigma_5 commute, so [1,5,-1,-5] and
+[-1,-5,1,5] are the same braid; their unitaries agree to 1e-16 and both are the
+identity, every other slot of the tuple matches, and Omega came out ah for one
+and awe for the other. [1,3,-1,-3] scored five turns and read as non-Abelian.
 
-The same fix in both ports, which now agree on the word that surfaced it: read
-on four strands rather than three it gives -0.809017 -1.314328i, the trefoil's
-value at this root.
+It also put a false trend in the strand sweep, since a larger fusion space
+offers more eigenvalues to wrap: Omega appeared to climb its constructor order
+along the Fibonacci dimensions when it was counting float sign dust.
+
+A winding is signed and must be summed unwrapped. On the (-180, 180] branch
+every spelling of the identity gives the trivial class.
