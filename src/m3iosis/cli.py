@@ -102,13 +102,17 @@ def fib_command(args):
 
     if args.manifold:
         man = FibonacciManifold()
-        print(f"Manifold Curvature: {man.curvature()}")
+        print(f"det(S) [constant, = -1]: {man.s_matrix_determinant()}")
         print(f"Path Integral Measure: {man.path_integral(args.word, 3)}")
         print(f"Braid center word: {man.braid_center(3)}")
         return
 
-    # Default: print help
-    fib_parser.print_help()
+    # Default: print help. The parser is local to main(), so reaching it by
+    # name here raised NameError on every flagless `cli.py fib`; it arrives on
+    # args instead.
+    parser = getattr(args, "_parser", None)
+    if parser is not None:
+        parser.print_help()
 
 
 def main():
@@ -142,7 +146,7 @@ def main():
                             help="Topological manifold operations")
     fib_parser.add_argument("--word", type=int, nargs="+", default=[1, 2, 1],
                             help="Braid word for simulation (default: [1,2,1])")
-    fib_parser.set_defaults(func=fib_command)
+    fib_parser.set_defaults(func=fib_command, _parser=fib_parser)
 
     # --- sim subcommand ---
     sim_parser = subparsers.add_parser("sim", help="Braid simulation")
@@ -160,7 +164,7 @@ def main():
                             help="Number of strands")
     man_parser.set_defaults(
         func=lambda a: (
-            print(f"Manifold Curvature: {FibonacciManifold().curvature()}"),
+            print(f"det(S) [constant, = -1]: {FibonacciManifold().s_matrix_determinant()}"),
             print(f"Path Integral Measure: {FibonacciManifold().path_integral(a.word, a.strands)}"),
             print(f"Braid center word: {FibonacciManifold().braid_center(a.strands)}"),
         )

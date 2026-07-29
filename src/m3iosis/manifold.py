@@ -22,19 +22,31 @@ class FibonacciManifold(FibonacciExtensions):
             word.extend(list(range(1, n)))
         return word
 
-    # 18. Quantum Teleportation (Logic)
-    def teleport(self, state, bell_pair):
-        # Logic: (sigma_1^2) braid word on 3-strands
-        return self.evaluate_braid_word([1,1], 3) @ state
+    # 18. Full monodromy: the sigma_1^2 exchange
+    def monodromy(self, state, num_strands=3):
+        """Apply sigma_1 squared, taking one anyon a full turn around another.
+
+        This carried the name `teleport`. It is a legitimate braid and the
+        physically meaningful one (full monodromy is what distinguishes anyonic
+        statistics from a half-exchange convention), but no state is
+        transferred anywhere and there is no entangled resource or classical
+        correction, so the teleportation name promised a protocol that is not
+        here.
+        """
+        return self.evaluate_braid_word([1, 1], num_strands) @ state
 
     # 19. Braid Homotopy (Equality via commutator)
     def are_homotopic(self, w1, w2, n):
         return np.allclose(self.evaluate_braid_word(w1, n), self.evaluate_braid_word(w2, n))
 
-    # 20. Braid Tangle Invariant (Polynomial stub)
+    # 20. Writhe: the SIGNED crossing count
     def writhe(self, word):
-        # Stub: writhe of simplified braid word
-        return len(word)
+        """Sum of crossing signs. A stub here returned `len(word)`, the
+
+        unsigned length, which contradicted the signed sum this same repository
+        already computes correctly inside `jones_polynomial`.
+        """
+        return sum(1 if g > 0 else -1 for g in word)
 
     # 21. Topological Charge Conservation
     def charge_check(self, state):
@@ -48,8 +60,28 @@ class FibonacciManifold(FibonacciExtensions):
     # 23. Braid Word Length
     def word_len(self, word): return len(word)
 
-    # 24. Anyonic Manifold Betti Number
-    def betti_1(self, word): return self.writhe(word)
+    # 24. First Betti number of the closure complement
+    def betti_1(self, word, num_strands):
+        """b1 of the complement of the braid closure = number of components.
+
+        For a link complement in S^3, H_1 is free abelian of rank equal to the
+        number of components, and the components of a braid closure are the
+        cycles of the permutation the word induces. This was set equal to the
+        writhe, which is not the Betti number of anything.
+        """
+        perm = list(range(num_strands))
+        for g in word:
+            i = abs(g) - 1
+            perm[i], perm[i + 1] = perm[i + 1], perm[i]
+        seen = set(); cycles = 0
+        for start in range(num_strands):
+            if start in seen:
+                continue
+            cycles += 1
+            j = start
+            while j not in seen:
+                seen.add(j); j = perm[j]
+        return cycles
 
     # 25. Braid Group Representation (Rho)
     def rho(self, word, n): return self.evaluate_braid_word(word, n)
@@ -61,9 +93,15 @@ class FibonacciManifold(FibonacciExtensions):
     # 27. Braid Word Flattening
     def flatten(self, word): return [item for sublist in word for item in sublist] if any(isinstance(i, list) for i in word) else word
 
-    # 28. Manifold Curvature (Metric of S-matrix)
-    def curvature(self): 
-        # Need to ensure self.S is initialized from parent class FibonacciBraidSimulator
+    # 28. Determinant of the S-matrix
+    def s_matrix_determinant(self):
+        """det(S), which for the Fibonacci theory is identically -1.
+
+        This was called `curvature`. A constant carries no geometry, and
+        dressing it in that name put a number in clothes it does not wear. The
+        constancy is itself the content: S is a symmetric involution up to
+        normalization, so its determinant cannot vary.
+        """
         return np.linalg.det(self.S)
 
     # 29. T-Gate Braid

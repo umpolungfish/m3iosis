@@ -396,7 +396,19 @@ def evaluate_braid_word(n, word):
 
     Example: the Yang-Baxter braid ``[1,2,1]`` and ``[2,1,2]`` yield the same
     unitary (see check_word_relations).
+
+    Note the argument order. `FibonacciBraidSimulator.evaluate_braid_word` on
+    the simulator takes `(word, num_strands)`, the reverse of this one, and the
+    two spellings sitting in one package is a live footgun: passing them the
+    wrong way round returns a matrix rather than an error. The swapped call is
+    detected and named here rather than silently evaluated.
     """
+    if isinstance(n, (list, tuple)) or isinstance(word, int):
+        raise TypeError(
+            "evaluate_braid_word(n, word) takes the strand count FIRST. The "
+            "simulator method of the same name takes (word, num_strands); "
+            "these arguments look swapped."
+        )
     states, sigmas = fibonacci_braid_representation(n)
     d = len(states)
     U = np.eye(d, dtype=complex)
