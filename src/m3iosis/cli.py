@@ -553,6 +553,151 @@ Commands:
 
     afdmc_parser.set_defaults(func=run_afdmc)
 
+    # --- troq subcommand ---
+    troq_parser = subparsers.add_parser("troq",
+        help="Triple-Ramified Ouroboric Quantale — TROQ tool",
+        description="""Triple-Ramified Ouroboric Quantale (TROQ): Q_A ≅ Q_B ≅ Q_C
+with triangular identity γ∘β∘α=id, ouroboric condition Q ≅ End(Q),
+and Frobenius closure μ∘δ=id.  Tuple: ⟨𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑝⊙𐑖𐑕𐑭⟩ (O_∞).
+
+Commands:
+  --report            Full structural report
+  --short             Short summary
+  --frames            Q_A, Q_B, Q_C comparison
+  --triangular        Triangular identity verification
+  --ouroboric         Ouroboric condition
+  --frobenius         Frobenius closure
+  --ladder            Distance ladder to sibling systems
+  --verify            Run all verifications
+  --table             Primitive expansion table
+  --expand AXIS       Expand a primitive axis
+  --distance TUPLE    Distance to arbitrary tuple
+  --tensor TUPLE      TROQ ⊗ other
+  --meet TUPLE        TROQ ⊓ other
+  --join TUPLE        TROQ ⊔ other
+  --json REPORT       JSON output for a specific report
+""")
+
+    troq_parser.add_argument("--report", action="store_true",
+                              help="Full structural report")
+    troq_parser.add_argument("--short", action="store_true",
+                              help="Short summary")
+    troq_parser.add_argument("--frames", action="store_true",
+                              help="Q_A, Q_B, Q_C comparison")
+    troq_parser.add_argument("--triangular", action="store_true",
+                              help="Triangular identity verification")
+    troq_parser.add_argument("--ouroboric", action="store_true",
+                              help="Ouroboric condition verification")
+    troq_parser.add_argument("--frobenius", action="store_true",
+                              help="Frobenius closure verification")
+    troq_parser.add_argument("--ladder", action="store_true",
+                              help="Distance ladder to sibling systems")
+    troq_parser.add_argument("--verify", action="store_true",
+                              help="Run all verifications")
+    troq_parser.add_argument("--table", action="store_true",
+                              help="Primitive expansion table")
+    troq_parser.add_argument("--expand", type=str, metavar="AXIS",
+                              help="Expand a primitive axis (e.g. Ð, Ř, Φ)")
+    troq_parser.add_argument("--distance", type=str, metavar="TUPLE",
+                              help="Distance to arbitrary 12-glyph tuple")
+    troq_parser.add_argument("--tensor", type=str, metavar="TUPLE",
+                              help="Compute TROQ ⊗ other")
+    troq_parser.add_argument("--meet", type=str, metavar="TUPLE",
+                              help="Compute TROQ ⊓ other")
+    troq_parser.add_argument("--join", type=str, metavar="TUPLE",
+                              help="Compute TROQ ⊔ other")
+    troq_parser.add_argument("--json", type=str, metavar="REPORT",
+                              help="JSON output: triangular, ouroboric, frobenius, frames, ladder")
+
+    def run_troq(args):
+        from m3iosis.troq import TROQAlgebra
+        import json as _json
+        troq = TROQAlgebra()
+
+        if args.report:
+            print(troq.report())
+        elif args.short:
+            print(troq.short_report())
+        elif args.frames:
+            frames = troq.three_frames()
+            print(f"Q_A = {frames['Q_A']}")
+            print(f"Q_B = {frames['Q_B']}")
+            print(f"Q_C = {frames['Q_C']}")
+            print(f"All identical: {frames['all_identical']}")
+        elif args.triangular:
+            result = troq.triangular_identity()
+            print(f"Triangular identity: {result['holds']}")
+            print(f"  troq⊗troq⊗troq = {result['triple_tensor']}")
+        elif args.ouroboric:
+            result = troq.ouroboric_condition()
+            print(f"Ouroboric condition: {result['holds']}")
+            print(f"  troq ⊗ troq = {result['self_tensor']}")
+            print(f"  Cardinal: Γ={result['granularity']}")
+        elif args.frobenius:
+            result = troq.frobenius_closure()
+            print(f"Frobenius closure: {result['closed']} ({result['verdict']})")
+            print(f"  pol={result['pol']}, crit={result['crit']}")
+            print(f"  fused = {result['fused']}")
+        elif args.ladder:
+            result = troq.distance_ladder()
+            print(f"Distance ladder from TROQ:")
+            for sib in result["siblings"]:
+                print(f"  → {sib['name']:<15}  hamming={sib['hamming_distance']}  weighted={sib['weighted_distance']}")
+        elif args.verify:
+            tri = troq.triangular_identity()
+            ouro = troq.ouroboric_condition()
+            frob = troq.frobenius_closure()
+            all_pass = tri["holds"] and ouro["holds"] and frob["closed"]
+            print(f"TROQ Verification: {'✓ ALL PASS' if all_pass else '✗ FAILURES'}")
+            print(f"  Triangular (γ∘β∘α=id): {'✓' if tri['holds'] else '✗'}")
+            print(f"  Ouroboric (Q≅End(Q)):  {'✓' if ouro['holds'] else '✗'}")
+            print(f"  Frobenius (μ∘δ=id):    {'✓' if frob['closed'] else '✗'}")
+        elif args.table:
+            print(troq.primitive_table())
+        elif args.expand:
+            try:
+                result = troq.expand_primitive(args.expand)
+                print(f"{result['axis']} = {result['glyph']} → {result['shavian']}")
+                print(f"  {result['domain_reading']}")
+            except KeyError as e:
+                print(f"Error: {e}")
+        elif args.distance:
+            result = troq.distance_to(args.distance)
+            print(f"TROQ → custom:")
+            print(f"  hamming: {result['hamming_distance']}  weighted: {result['weighted_distance']}")
+            for s, a, b in result["mismatches"]:
+                print(f"    {s}: {a} → {b}")
+        elif args.tensor:
+            result = troq.tensor_with(args.tensor)
+            print(f"TROQ ⊗ other = {result['result']}")
+            print(f"  equals TROQ: {result['equals_troq']}")
+        elif args.meet:
+            result = troq.meet_with(args.meet)
+            print(f"TROQ ⊓ other = {result['result']}")
+            print(f"  equals TROQ: {result['equals_troq']}")
+        elif args.join:
+            result = troq.join_with(args.join)
+            print(f"TROQ ⊔ other = {result['result']}")
+            print(f"  equals TROQ: {result['equals_troq']}")
+        elif args.json:
+            report_type = args.json
+            if report_type == "triangular":
+                print(_json.dumps(troq.triangular_identity(), indent=2, ensure_ascii=False))
+            elif report_type == "ouroboric":
+                print(_json.dumps(troq.ouroboric_condition(), indent=2, ensure_ascii=False))
+            elif report_type == "frobenius":
+                print(_json.dumps(troq.frobenius_closure(), indent=2, ensure_ascii=False))
+            elif report_type == "frames":
+                print(_json.dumps(troq.three_frames(), indent=2, ensure_ascii=False))
+            elif report_type == "ladder":
+                print(_json.dumps(troq.distance_ladder(), indent=2, ensure_ascii=False))
+            else:
+                print(f"Unknown report: {report_type}")
+        else:
+            print(troq.short_report())
+
+    troq_parser.set_defaults(func=run_troq)
+
     # --- gematria subcommand ---
     gematria_parser = subparsers.add_parser("gematria",
         help="Hypergematria — IMASM word analysis via the lattice flow engine",
