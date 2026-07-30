@@ -26,6 +26,8 @@ from m3iosis.fibonacci_anyon_algebra import (
     fusion_space_dimension, fusion_states, summary,
     PHI, D, THETA_TAU, central_charge,
 )
+from m3iosis.pericyclic_frobenoid import pf_cli
+from m3iosis.pericyclic_compiler import pqc_cli
 
 
 def fib_command(args):
@@ -496,9 +498,8 @@ Commands:
 
     # --- afdmc subcommand ---
     afdmc_parser = subparsers.add_parser("afdmc",
-        help="Asymptotic Frozen-Disordered Monadic Cohomologies -- MBL cohomology tool",
-        description="""Asymptotic Frozen-Disordered Monadic Cohomologies (AFDMC).
-
+        help="Asymptotic Frozen-Disordered Monadic Cohomologies — MBL cohomology tool",
+        description="""Asymptotic Frozen-Disordered Monadic Cohomologies (AFDMC):
 Cohomology of the MBL localization monad, approaching criticality.
 
 Commands:
@@ -854,10 +855,163 @@ Common words:
 
     gematria_parser.set_defaults(func=run_gematria)
 
+    # --- pf subcommand ---
+    pf_parser = subparsers.add_parser("pf",
+        help="Pericyclic Semiotic Frobenoid — ℂ[ℤ₂] special Frobenius algebra at criticality",
+        description="""Pericyclic Semiotic Frobenoid (PF): ℂ[ℤ₂] special Frobenius algebra
+with pericyclic crossing topology and μ∘δ=id at conformal fixed point.
+
+Tuple: ⟨𐑦𐑥𐑑𐑹𐑐𐑤𐑔𐑝⊙𐑒𐑙𐑷⟩  (O_∞, Special Frobenius)
+
+Algebra: ℂ[ℤ₂] = ℂ⟨1,g⟩/(g²−1) with pericyclic crossing μ(g⊗g)=1
+modeling the [2+2] cycloaddition of two π-systems into σ-framework.
+
+Commands:
+  --report            Full structural report (algebra + parity + crossing + pairing + distances)
+  --short             Short summary
+  --parity            ℤ₂ parity decomposition (even σ-framework / odd π-system)
+  --crossing          Pericyclic crossing topology and coproduct structure
+  --frobenius         Frobenius condition verification
+  --pairing           Frobenius pairing matrix ⟨a,b⟩ = ε(ab)
+  --verify            Run all verifications (μ∘δ=id, Frobenius, non-degenerate pairing)
+  --tuple             Print grammar tuple
+  --distance SYS      Weighted Hamming distance to sibling system ("all" for ladder)
+  --json              JSON output format
+""")
+
+    pf_parser.add_argument("--report", action="store_true",
+                              help="Full structural report")
+    pf_parser.add_argument("--short", action="store_true",
+                              help="Short summary")
+    pf_parser.add_argument("--parity", action="store_true",
+                              help="ℤ₂ parity decomposition")
+    pf_parser.add_argument("--crossing", action="store_true",
+                              help="Pericyclic crossing topology")
+    pf_parser.add_argument("--frobenius", action="store_true",
+                              help="Frobenius condition verification")
+    pf_parser.add_argument("--pairing", action="store_true",
+                              help="Frobenius pairing matrix")
+    pf_parser.add_argument("--verify", action="store_true",
+                              help="Run all verifications")
+    pf_parser.add_argument("--tuple", action="store_true",
+                              help="Print grammar tuple")
+    pf_parser.add_argument("--distance", type=str, nargs="?", const="all",
+                              metavar="SYS", help="Distance to sibling system")
+    pf_parser.add_argument("--json", action="store_true",
+                              help="JSON output format")
+
+    pf_parser.set_defaults(func=pf_cli)
 
 
 
-    # --- info subcommand ---
+
+
+    
+    # --- pqc subcommand ---
+    pqc_parser = subparsers.add_parser("pqc",
+        help="Pericyclic Quantum Compiler — transforms states, computes TQFT, generates protocols",
+        description="""Pericyclic Quantum Compiler (PQC): computational engine for the Pericyclic
+Semiotic Frobenoid. Evolves quantum states, computes 2D TQFT partition functions,
+generates IMASM protocols, compiles Lean proofs, and bridges to SIC-POVM.
+
+Tuple: ⟨𐑦𐑥𐑑𐑹𐑐𐑤𐑔𐑝⊙𐑒𐑙𐑷⟩  (O_∞, Special Frobenius)
+
+Commands:
+  --evolve A,B     Evolve state through pericyclic monad (μ, δ, ε, pairing)
+  --tqft N         2D TQFT partition function for genus-N surface
+  --protocol TYPE  Generate IMASM protocol word (frobenius_cycle, pericyclic_cross, pairing, monad, full)
+  --lean [NAME]    Generate Lean proof scaffold
+  --sic            Bridge to SIC-POVM fiducial (Belnap B=XZ)
+  --compile        Full compilation pipeline (all artifacts)
+  --genus N        Genus for TQFT (default: 0)
+  --output DIR     Output directory for compilation artifacts
+  --interactive    Interactive exploration mode
+""")
+
+    pqc_parser.add_argument("--evolve", type=str, metavar="A,B",
+                              help="Evolve state (a,b) through pericyclic monad")
+    pqc_parser.add_argument("--tqft", type=int, metavar="GENUS",
+                              help="2D TQFT partition function for genus")
+    pqc_parser.add_argument("--protocol", type=str, metavar="TYPE",
+                              help="Generate IMASM protocol (frobenius_cycle, pericyclic_cross, pairing, monad, full)")
+    pqc_parser.add_argument("--lean", type=str, nargs="?", const="pf_protocol", metavar="NAME",
+                              help="Generate Lean proof scaffold")
+    pqc_parser.add_argument("--sic", action="store_true",
+                              help="Bridge to SIC-POVM fiducial (Belnap B=XZ)")
+    pqc_parser.add_argument("--compile", action="store_true",
+                              help="Full compilation pipeline")
+    pqc_parser.add_argument("--genus", type=int, default=0,
+                              help="Genus for TQFT (default: 0)")
+    pqc_parser.add_argument("--output", type=str, default="/tmp/pqc_compile",
+                              help="Output directory for compilation artifacts")
+    pqc_parser.add_argument("--interactive", action="store_true",
+                              help="Interactive exploration mode")
+
+    pqc_parser.set_defaults(func=pqc_cli)
+
+    # --- algebra subcommand ---
+    algebra_parser = subparsers.add_parser("algebra", 
+        help="Tuple algebra — compute on Imscribing Grammar tuples",
+        description="""Real computation for grammar tuple operations: distance, meet, join,
+Frobenius tier, consciousness score, ZFC decomposition, retrosynthesis, winding arithmetic.
+
+Operations:
+  --tuple TUPLE             12-glyph tuple (with or without ⟨⟩)
+  --report                  Full structural analysis (tier, C-score, ZFC, retrosynthesis, distances)
+  --decode                  Human-readable tuple decode
+  --distance TUPLE_OR_NAME  Distance to another tuple or named reference (grammar, clink, aafa, psfoa)
+  --meet TUPLE              Meet (GLB) with another tuple
+  --join TUPLE              Join (LUB) with another tuple
+  --compare-with SYSTEMS    Comma-separated: aafa,psfoa (for --report)
+  --winding                 Compute winding arithmetic
+  --winding-of NAME         Named winding: t_gate, s_gate, z_gate, r_tau, quarter, full, jones_root
+  --turns TURNS             Rational turns: "1/8", "2/5"
+  --angle RADIANS           Angle in radians (converted to turns)
+  --power N                 Raise winding to power N
+  --json                    JSON output
+
+Examples:
+  m3 algebra --tuple ⟨𐑦𐑸𐑽𐑹𐑐𐑘𐑚𐑜⊙𐑫𐑕𐑭⟩ --report
+  m3 algebra --tuple ⟨𐑦𐑸𐑽𐑹𐑐𐑘𐑚𐑜⊙𐑫𐑕𐑭⟩ --distance aafa
+  m3 algebra --tuple ⟨𐑦𐑸𐑽𐑹𐑐𐑘𐑚𐑜⊙𐑫𐑕𐑭⟩ --meet ⟨𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑝⊙𐑫𐑕𐑭⟩
+  m3 algebra --winding --winding-of t_gate
+  m3 algebra --winding --turns 2/5 --power 3
+""")
+    algebra_parser.add_argument("--tuple", type=str, help="12-glyph tuple")
+    algebra_parser.add_argument("--report", action="store_true", help="Full structural analysis")
+    algebra_parser.add_argument("--decode", action="store_true", help="Human-readable decode")
+    algebra_parser.add_argument("--distance", type=str, help="Tuple or named reference")
+    algebra_parser.add_argument("--meet", type=str, help="Tuple for meet (GLB)")
+    algebra_parser.add_argument("--join", type=str, help="Tuple for join (LUB)")
+    algebra_parser.add_argument("--compare-with", type=str, help="Comma-separated: aafa,psfoa")
+    algebra_parser.add_argument("--winding", action="store_true", help="Winding arithmetic")
+    algebra_parser.add_argument("--winding-of", type=str, help="Named winding constant")
+    algebra_parser.add_argument("--turns", type=str, help="Rational turns e.g. 1/8")
+    algebra_parser.add_argument("--angle", type=float, help="Angle in radians")
+    algebra_parser.add_argument("--power", type=int, help="Raise winding to power")
+    algebra_parser.add_argument("--json", action="store_true", help="JSON output")
+    def run_algebra(args):
+        from m3iosis.tuple_algebra import tuple_algebra_main
+        alg_args = {}
+        if args.tuple: alg_args["tuple"] = args.tuple
+        if args.report: alg_args["report"] = True
+        if args.decode: alg_args["decode"] = True
+        if args.distance: alg_args["distance"] = args.distance
+        if args.meet: alg_args["meet"] = args.meet
+        if args.join: alg_args["join"] = args.join
+        if args.compare_with: alg_args["compare_with"] = args.compare_with
+        if args.winding: alg_args["winding"] = True
+        if args.winding_of: alg_args["winding_of"] = args.winding_of
+        if args.turns: alg_args["turns"] = args.turns
+        if args.angle is not None: alg_args["angle"] = args.angle
+        if args.power is not None: alg_args["power"] = args.power
+        if args.json: alg_args["json"] = True
+        print(tuple_algebra_main(alg_args))
+    algebra_parser.set_defaults(func=run_algebra)
+
+
+
+# --- info subcommand ---
     info_parser = subparsers.add_parser("info", help="System and algebra information")
     info_parser.set_defaults(
         func=lambda a: (

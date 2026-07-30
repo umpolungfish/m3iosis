@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Carefully patch m3iosis CLI help with descriptions and examples."""
-import re
-
+"""
+Patch m3iosis CLI help: add descriptions + examples.
+Uses unique description-start anchors to avoid cross-tool matching.
+"""
 with open('src/m3iosis/cli.py', 'r') as f:
-    lines = f.readlines()
+    content = f.read()
 
-# --- 1. fib (line 126): single-line -> multi-line with description + epilog ---
-new_fib = '''fib_parser = subparsers.add_parser("fib",
+# ===== SINGLE-LINE PARSERS (unique old patterns) =====
+
+# 1. fib
+content = content.replace(
+    'fib_parser = subparsers.add_parser("fib", help="Fibonacci anyon algebra tools")',
+    '''fib_parser = subparsers.add_parser("fib",
         help="Fibonacci anyon algebra tools",
         description="""Fibonacci anyon algebra (SU(2)_3): fusion rules, braid representations,
 modular S/T matrices, and quantum computer gate synthesis.
@@ -36,33 +41,17 @@ Commands:
 
 The golden ratio phi = (1+sqrt(5))/2.  Total quantum dimension D = sqrt(1+phi^2).
 Topological spin theta_tau = exp(4*pi*i/5).  Central charge c = 14/5 - 6 = 4/5.
-""")
-'''
-# Find the fib_parser line and replace through the set_defaults
-fib_start = None
-for i, line in enumerate(lines):
-    if 'fib_parser = subparsers.add_parser("fib"' in line:
-        fib_start = i
-        break
-# Find the end of the fib parser block (next add_parser or def main line)
-fib_end = fib_start
-for i in range(fib_start + 1, fib_start + 15):
-    if i >= len(lines):
-        break
-    if 'sim_parser' in lines[i] or i >= fib_start + 10:
-        fib_end = i
-        break
+""")''')
 
-# Replace the fib block
-lines[fib_start:fib_end] = new_fib.splitlines(True)
-
-# --- 2. sim (line ~152): single-line -> multi-line ---
-new_sim = '''sim_parser = subparsers.add_parser("sim",
+# 2. sim
+content = content.replace(
+    'sim_parser = subparsers.add_parser("sim", help="Braid simulation")',
+    '''sim_parser = subparsers.add_parser("sim",
         help="Braid simulation",
         description="""Braid word simulation for Fibonacci anyons on N strands.
 
 Evaluates a braid word as a sequence of Artin generators (sigma_k, sigma_k^-1)
-acting on the Fibonacci fusion space V_n, and reports the unitary matrix,
+acting on the Fibonacci fusion space V_n, reporting the unitary matrix,
 topological spin contribution, and braid trace.
 
 The braid group B_n acts on V_n by R-matrix generators placed at adjacent
@@ -74,24 +63,13 @@ denote sigma_k^-1 (under-cross).""",
   m3 sim --strands 5 --word 1 2 3 2 1 # 5-strand braid
   m3 sim --strands 7                   # 7-strand, dim V_7 = 13
 
-The braid word is evaluated iteratively: each generator is applied as
-a unitary R-matrix on the fusion tree basis.  Output shows dimension,
-unitarity check, trace, and eigenvalue spectrum.
-""")
-'''
-for i, line in enumerate(lines):
-    if 'sim_parser = subparsers.add_parser("sim"' in line:
-        sim_start = i
-        break
-sim_end = sim_start
-for i in range(sim_start + 1, min(sim_start + 10, len(lines))):
-    if 'man_' in lines[i] or i >= sim_start + 8:
-        sim_end = i
-        break
-lines[sim_start:sim_end] = new_sim.splitlines(True)
+Output shows dimension, unitarity check, trace, and eigenvalue spectrum.
+""")''')
 
-# --- 3. manifold (line ~160): single-line -> multi-line ---
-new_man = '''man_parser = subparsers.add_parser("manifold",
+# 3. manifold
+content = content.replace(
+    'man_parser = subparsers.add_parser("manifold", help="Topological manifold operations")',
+    '''man_parser = subparsers.add_parser("manifold",
         help="Topological manifold operations",
         description="""Topological manifold operations on the Fibonacci anyon moduli space.
 
@@ -109,24 +87,14 @@ with det(S) = -1 (constant, independent of basis).""",
   m3 manifold --strands 5              # 5-strand braid center
   m3 manifold --word 1 2 3 2 1 -n 6    # 6-strand full report
 
-The path integral measure is derived from the braid word's writhe
-and the quantum dimension, giving a topological invariant of the
-bordism with anyon worldlines.
-""")
-'''
-for i, line in enumerate(lines):
-    if 'man_parser = subparsers.add_parser("manifold"' in line:
-        man_start = i
-        break
-man_end = man_start
-for i in range(man_start + 1, min(man_start + 10, len(lines))):
-    if 'qc_parser' in lines[i] or i >= man_start + 8:
-        man_end = i
-        break
-lines[man_start:man_end] = new_man.splitlines(True)
+The path integral measure derives from the braid word writhe
+and quantum dimension, giving a bordism topological invariant.
+""")''')
 
-# --- 4. qc (line ~174): single-line -> multi-line ---
-new_qc = '''qc_parser = subparsers.add_parser("qc",
+# 4. qc
+content = content.replace(
+    'qc_parser = subparsers.add_parser("qc", help="Fibonacci quantum computer")',
+    '''qc_parser = subparsers.add_parser("qc",
         help="Fibonacci quantum computer",
         description="""Fibonacci quantum computer: gate synthesis and verification.
 
@@ -147,23 +115,13 @@ set {sigma_1, sigma_2} generates a dense subgroup of SU(2).""",
   m3 qc --depth 10 --approx-h         # deeper search for Hadamard
 
 The Fibonacci quantum computer is fault-tolerant by construction:
-all gates are topological (braiding operations) and protected by
-the energy gap.
-""")
-'''
-for i, line in enumerate(lines):
-    if 'qc_parser = subparsers.add_parser("qc"' in line:
-        qc_start = i
-        break
-qc_end = qc_start
-for i in range(qc_start + 1, min(qc_start + 10, len(lines))):
-    if 'triple_' in lines[i] or i >= qc_start + 8:
-        qc_end = i
-        break
-lines[qc_start:qc_end] = new_qc.splitlines(True)
+all gates are topological (braiding operations) and gap-protected.
+""")''')
 
-# --- 5. triple (line ~201): single-line -> multi-line ---
-new_triple = '''triple_parser = subparsers.add_parser("triple",
+# 5. triple
+content = content.replace(
+    'triple_parser = subparsers.add_parser("triple", help="Triple Frame von Neumann Superoperator Algebra")',
+    '''triple_parser = subparsers.add_parser("triple",
         help="Triple Frame von Neumann Superoperator Algebra",
         description="""Triple Frame von Neumann Superoperator Algebra: IMASM protocol A and B
 analysis with Frobenius closure verification.
@@ -193,25 +151,15 @@ Commands:
   m3 triple --bridge                  # connect to Fibonacci manifold
   m3 triple --types                   # type expansion table
   m3 triple --cycle                   # round-trip verification
-  m3 triple --check '|-><>+=.-|'      # custom word check
 
-Protocol A tuple: <ETHDTRPFCGGphiHSO> - 16 opcodes, 5 loops, emergence at EP.
-Protocol B tuple: <ETHDPTRPFCGGphiHSO> - 20 opcodes, 6 loops, holographic.
-""")
-'''
-for i, line in enumerate(lines):
-    if 'triple_parser = subparsers.add_parser("triple"' in line:
-        triple_start = i
-        break
-triple_end = triple_start
-for i in range(triple_start + 1, min(triple_start + 10, len(lines))):
-    if 'hqe_' in lines[i] or i >= triple_start + 8:
-        triple_end = i
-        break
-lines[triple_start:triple_end] = new_triple.splitlines(True)
+Protocol A: 16 opcodes, 5 loops, emergence at EP.
+Protocol B: 20 opcodes, 6 loops, holographic round-trip.
+""")''')
 
-# --- 6. info (line ~987): single-line -> multi-line ---
-new_info = '''info_parser = subparsers.add_parser("info",
+# 6. info
+content = content.replace(
+    'info_parser = subparsers.add_parser("info", help="System and algebra information")',
+    '''info_parser = subparsers.add_parser("info",
         help="System and algebra information",
         description="""System information: Fibonacci anyon algebra parameters and references.
 
@@ -228,28 +176,39 @@ References:
   - Kitaev, A. "Anyons in an exactly solved model and beyond"
   - Freedman, M.H. et al. "Topological quantum computation"
   - Trebst, S. et al. "A short introduction to Fibonacci anyon models"
-""")
-'''
-for i, line in enumerate(lines):
-    if 'info_parser = subparsers.add_parser("info"' in line:
-        info_start = i
-        break
-info_end = info_start
-for i in range(info_start + 1, min(info_start + 10, len(lines))):
-    if 'set_defaults' in lines[i] or i >= info_start + 8:
-        info_end = i
-        break
-lines[info_start:info_end] = new_info.splitlines(True)
+""")''')
 
-# --- 7. hqe (line ~280+): has description, add epilog ---
-hqe_desc_end = None
-for i, line in enumerate(lines):
-    if '--join TUPLE      Compute join with a 12-glyph tuple' in line:
-        hqe_desc_end = i
-        break
+# ===== MULTI-LINE PARSERS — replace from unique description-anchor to close =====
 
-if hqe_desc_end is not None:
-    hqe_epilog = '''",
+# 7. hqe: anchor on "Holonomic Quasi-Ergodic Quantale: non-Abelian Berry holonomy"
+HQE_OLD = '''Holonomic Quasi-Ergodic Quantale: non-Abelian Berry holonomy
+in a Many-Body Localized phase. O_inf (Special Frobenius).
+
+Commands:
+  --report       Full structural report (holonomy + MBL + consciousness)
+  --holonomy     Non-Abelian Berry holonomy computation
+  --mbl          Many-Body Localization diagnostics
+  --consciousness Consciousness score (C-score)
+  --tuple        Print grammar tuple only
+  --distance SYS Distance to PFA, winding, or clink (or all)
+  --meet TUPLE   Compute meet with a 12-glyph tuple
+  --join TUPLE   Compute join with a 12-glyph tuple
+  --json         JSON output format
+""")'''
+HQE_NEW = '''Holonomic Quasi-Ergodic Quantale: non-Abelian Berry holonomy
+in a Many-Body Localized phase. O_inf (Special Frobenius).
+
+Commands:
+  --report       Full structural report (holonomy + MBL + consciousness)
+  --holonomy     Non-Abelian Berry holonomy computation
+  --mbl          Many-Body Localization diagnostics
+  --consciousness Consciousness score (C-score)
+  --tuple        Print grammar tuple only
+  --distance SYS Distance to PFA, winding, or clink (or all)
+  --meet TUPLE   Compute meet with a 12-glyph tuple
+  --join TUPLE   Compute join with a 12-glyph tuple
+  --json         JSON output format
+""",
         epilog="""Examples:
   m3 hqe --report                       # full structural report
   m3 hqe --holonomy                     # Berry holonomy computation
@@ -260,24 +219,178 @@ if hqe_desc_end is not None:
   m3 hqe --distance pfa              # distance to PFA
   m3 hqe --json --report              # JSON output
 
-The HQE grammar tuple is <ETHDTRPFCGGphiHSO> (O_inf).  Special
-Frobenius algebra: mu o delta = id is verified at every call.
-Consciousness score measures self-referential closure depth.
-Closed under meet, join and tensor operations with any 12-glyph tuple.
-"""
-'''
-    # The line currently ends with:  ) or something
-    # We need to find the closing ) of the add_parser call
-    # The add_parser for hqe is multi-line, ending somewhere after the description close
-    
-    # The simplest approach: insert the epilog after the description's closing """
-    # by replacing the line that closes description with description+epilog+comma
-    pass
+The HQE tuple is <ETHDTRPFCGGphiHSO> (O_inf).
+Special Frobenius algebra: mu o delta = id verified at every call.
+""")'''
+assert HQE_OLD in content, "HQE anchor not found!"
+content = content.replace(HQE_OLD, HQE_NEW, 1)
 
-# Actually, let me take a simpler approach for the multi-line parsers.
-# I'll read the file as a string and do targeted replacements.
+# 8. hop: anchor on "hop between tuples through the crystal of types"
+HOP_OLD = '''hop between tuples through the crystal of types, and compute geodesic paths.
 
+Commands:
+  --tuple TUPLE            Manifest a tuple in all frameworks
+  --report TUPLE           Full universe-hopping report
+  --hop-origin TUPLE       Start tuple for hopping
+  --hop-target TUPLE       Target tuple for hopping
+  --geodesic               Use A* for exact minimal-cost path
+  --compare-a TUPLE        First tuple for comparison
+  --compare-b TUPLE        Second tuple for comparison
+  --framework-matrix       All pairwise distances between anchors
+  --reverse-framework FW   Framework for reverse parameter lookup
+  --reverse-params JSON    Target parameters as JSON dictionary
+
+Frameworks available:
+  hqe                  Holonomic Quasi-Ergodic Quantale
+  fibonacci_braid      Fibonacci Anyon Braid Algebra
+  berry_holonomy       Non-Abelian Berry Holonomy (U(n))
+  mbl_phase            Many-Body Localization Phase Diagram
+  triple_frame         Triple Frame Von Neumann Algebra
+""")'''
+HOP_NEW = '''hop between tuples through the crystal of types, and compute geodesic paths.
+
+Commands:
+  --tuple TUPLE            Manifest a tuple in all frameworks
+  --report TUPLE           Full universe-hopping report
+  --hop-origin TUPLE       Start tuple for hopping
+  --hop-target TUPLE       Target tuple for hopping
+  --geodesic               Use A* for exact minimal-cost path
+  --compare-a TUPLE        First tuple for comparison
+  --compare-b TUPLE        Second tuple for comparison
+  --framework-matrix       All pairwise distances between anchors
+  --reverse-framework FW   Framework for reverse parameter lookup
+  --reverse-params JSON    Target parameters as JSON dictionary
+
+Frameworks available:
+  hqe                  Holonomic Quasi-Ergodic Quantale
+  fibonacci_braid      Fibonacci Anyon Braid Algebra
+  berry_holonomy       Non-Abelian Berry Holonomy (U(n))
+  mbl_phase            Many-Body Localization Phase Diagram
+  triple_frame         Triple Frame Von Neumann Algebra
+""",
+        epilog="""Examples:
+  m3 hop --tuple '<...>'                   # manifest tuple in all frameworks
+  m3 hop --report '<...>'                  # full report
+  m3 hop --hop-origin '<...>' --hop-target '<...>'  # hop path
+  m3 hop --geodesic                        # A* optimal path
+  m3 hop --framework-matrix               # all pairwise anchor distances
+  m3 hop --reverse-framework hqe          # reverse parameter lookup
+
+Available frameworks: hqe, fibonacci_braid, berry_holonomy, mbl_phase, triple_frame.
+Each hop changes ONE glyph (17.28M point crystal).
+""")'''
+assert HOP_OLD in content, "HOP anchor not found!"
+content = content.replace(HOP_OLD, HOP_NEW, 1)
+
+# 9. dyson: anchor on "Dyson's threefold way (beta=1/2/4)"
+DYSON_OLD = '''Dyson's threefold way (beta=1/2/4)
+combined with the double ramification cycle from moduli spaces.
+
+Commands:
+  --report            Full report (level spacing + form factor + DR cycle + Frobenius)
+  --level-spacing     Wigner surmise & gap ratio for beta=1,2,4
+  --form-factor       Spectral form factor K(tau)
+  --frobenius         Frobenius condition mu o delta=id verification
+  --dr-cycle          Double Ramification cycle structure constants
+  --tuple             Print grammar tuple
+  --distance          Distances to sibling systems
+  --json              JSON output format
+  --beta N            Dyson beta value: 1 (GOE), 2 (GUE), 4 (GSE) (default: 2)
+  --N N               Matrix size (default: 100)
+  --genus N           Genus of the DR cycle (default: 0)
+""")'''
+DYSON_NEW = '''Dyson's threefold way (beta=1/2/4)
+combined with the double ramification cycle from moduli spaces.
+
+Commands:
+  --report            Full report (level spacing + form factor + DR cycle + Frobenius)
+  --level-spacing     Wigner surmise & gap ratio for beta=1,2,4
+  --form-factor       Spectral form factor K(tau)
+  --frobenius         Frobenius condition mu o delta=id verification
+  --dr-cycle          Double Ramification cycle structure constants
+  --tuple             Print grammar tuple
+  --distance          Distances to sibling systems
+  --json              JSON output format
+  --beta N            Dyson beta value: 1 (GOE), 2 (GUE), 4 (GSE) (default: 2)
+  --N N               Matrix size (default: 100)
+  --genus N           Genus of the DR cycle (default: 0)
+""",
+        epilog="""Examples:
+  m3 dyson --report                     # full report (all diagnostics)
+  m3 dyson --level-spacing              # Wigner surmise for beta=2
+  m3 dyson --form-factor                # spectral form factor K(tau)
+  m3 dyson --frobenius                  # Frobenius condition check
+  m3 dyson --dr-cycle                   # DR cycle structure constants
+  m3 dyson --beta 4 --N 200            # GSE, matrix size 200
+  m3 dyson --genus 1 --dr-cycle        # genus-1 DR cycle
+  m3 dyson --distance                   # distances to sibling systems
+  m3 dyson --json --report             # JSON output
+
+Dyson threefold way: beta=1 (GOE), beta=2 (GUE), beta=4 (GSE).
+DR cycle lives in moduli space M_{g,n} of stable curves.
+""")'''
+assert DYSON_OLD in content, "DYSON anchor not found!"
+content = content.replace(DYSON_OLD, DYSON_NEW, 1)
+
+# 10. afdmc: anchor on "Cohomology of the MBL localization monad, approaching criticality."
+AFDMC_OLD = '''Cohomology of the MBL localization monad, approaching criticality.
+
+Commands:
+  --report         Full structural report (cohomology + spectral + filtration)
+  --cohomology     Monadic cohomology groups (H^0-H^3)
+  --spectral       E_2 spectral sequence collapse diagnostic
+  --filtration     Asymptotic filtration analysis (eps -> 0+)
+  --obstructions   Thermalization obstruction classification
+  --mbl            MBL diagnostics (gap ratio, l-bits)
+  --tuple          Print grammar tuple
+  --distance       Distances to sibling systems (hqe, hombroad)
+  --json           JSON output format
+  --size N         System size (default: 8)
+  --disorder W     Disorder strength (default: 5.0)
+  --W_c Wc         Critical disorder strength (default: 8.0)
+  --steps N        Filtration steps (default: 5)
+  --seed N         RNG seed
+""")'''
+AFDMC_NEW = '''Cohomology of the MBL localization monad, approaching criticality.
+
+Commands:
+  --report         Full structural report (cohomology + spectral + filtration)
+  --cohomology     Monadic cohomology groups (H^0-H^3)
+  --spectral       E_2 spectral sequence collapse diagnostic
+  --filtration     Asymptotic filtration analysis (eps -> 0+)
+  --obstructions   Thermalization obstruction classification
+  --mbl            MBL diagnostics (gap ratio, l-bits)
+  --tuple          Print grammar tuple
+  --distance       Distances to sibling systems (hqe, hombroad)
+  --json           JSON output format
+  --size N         System size (default: 8)
+  --disorder W     Disorder strength (default: 5.0)
+  --W_c Wc         Critical disorder strength (default: 8.0)
+  --steps N        Filtration steps (default: 5)
+  --seed N         RNG seed
+""",
+        epilog="""Examples:
+  m3 afdmc --report                     # full cohomology report
+  m3 afdmc --cohomology                 # H^0-H^3 monadic cohomology groups
+  m3 afdmc --spectral                   # E_2 spectral sequence collapse
+  m3 afdmc --filtration                 # asymptotic filtration (eps -> 0+)
+  m3 afdmc --obstructions              # thermalization obstruction classes
+  m3 afdmc --mbl                        # MBL diagnostics (gap ratio)
+  m3 afdmc --size 12 --disorder 6.0     # 12-site system, W=6.0
+  m3 afdmc --W_c 10.0 --steps 8        # custom critical disorder
+  m3 afdmc --distance                   # distances to sibling systems
+  m3 afdmc --json --report             # JSON output
+
+Cohomology: H^0 = l-bits, H^1 = level stats, H^2 = obstruction,
+H^3 = anomaly.  E_2 spectral sequence collapses at MBL fixed points.
+""")'''
+# Verify uniqueness - this anchor should only appear once (afdmc)
+assert content.count(AFDMC_OLD) == 1, f"AFDMC anchor appears {content.count(AFDMC_OLD)} times in content!"
+content = content.replace(AFDMC_OLD, AFDMC_NEW, 1)
+
+# Write patched file
 with open('src/m3iosis/cli.py', 'w') as f:
-    f.writelines(lines)
+    f.write(content)
 
-print("Phase 1 done - simple parsers patched")
+print("ALL 10 PATCHES APPLIED SUCCESSFULLY")
+print(f"File size: {len(content)} bytes")

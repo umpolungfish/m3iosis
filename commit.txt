@@ -1,19 +1,20 @@
-Sum eigenvalue phases on the signed branch when computing the winding
+Flag a degenerate fusion space instead of reporting invariants off it
 
-phases_deg is wrapped into [0, 360) for display, and the Omega mapping summed
-that as a total winding. An eigenvalue whose true phase is zero-from-below
-(1 - 1e-16j, which is what the identity braid produces) wraps to 359.9999 and
-contributes a spurious full turn.
+fusion_space_dimension is dim Hom(tau^n, 1), the vacuum sector, F_{n-1}. At
+three strands that is one-dimensional, so the braid representation is 1x1 and
+||[sigma_1, sigma_2]|| is exactly 0.000000 — every non-Abelian invariant the
+bridge reports for a 3-strand word is a property of a trivial representation,
+not of Fibonacci anyons. Nothing downstream could tell the difference, and a
+sweep of 5460 three-strand words produced a whole Omega census off those 1x1
+matrices.
 
-The consequence was that Omega was not a braid invariant and not even a function
-of the resulting unitary. sigma_1 and sigma_5 commute, so [1,5,-1,-5] and
-[-1,-5,1,5] are the same braid; their unitaries agree to 1e-16 and both are the
-identity, every other slot of the tuple matches, and Omega came out ah for one
-and awe for the other. [1,3,-1,-3] scored five turns and read as non-Abelian.
+The familiar B_3 statement lives in the other sector. Hom(tau^3, tau) is
+2-dimensional, which is where sigma_1 sigma_2 sigma_1 |tau> = a|1tau> + b|tau
+tau> and the commutator norm 1.799 come from. The sectors interleave —
+Hom(tau^n, tau) is F_n and so matches Hom(tau^{n+1}, 1) — and four strands here
+reproduces 1.798907 exactly.
 
-It also put a false trend in the strand sweep, since a larger fusion space
-offers more eigenvalues to wrap: Omega appeared to climb its constructor order
-along the Fibonacci dimensions when it was counting float sign dust.
-
-A winding is signed and must be summed unwrapped. On the (-180, 180] branch
-every spelling of the identity gives the trivial class.
+A fusion space below dimension two now raises a RuntimeWarning naming the sector
+and pointing at n >= 4. Behaviour is otherwise unchanged: the conclusion that
+Omega never reaches the non-Abelian class across the swept range stands, because
+the vacuum sweep at n=4..8 already covers the tau sector at n=3..7.
