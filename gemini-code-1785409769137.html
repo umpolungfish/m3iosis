@@ -1,0 +1,11 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#111', 'primaryBorderColor': '#444', 'textColor': '#fff'}}}%%
+graph TD
+    A["η: Uniform Field<br>(ℂ → A_0)"] -->|◇ δ| B["Defect Pair Creation<br>(A_w → A_k ⊗ A_{w-k})"]
+    B -->|● μ| C["Defect Fusion<br>(A_k ⊗ A_{w-k} → A_w)"]
+    C -.->|μ ∘ δ = id| A
+    C -->|ε| D["Topological Action<br>(A_w → ℂ)"]
+    
+    style A fill:#000,stroke:#0f0,stroke-width:2px
+    style B fill:#000,stroke:#f00,stroke-width:2px
+    style C fill:#000,stroke:#00f,stroke-width:2px
+    style D fill:#000,stroke:#ff0,stroke-width:2px

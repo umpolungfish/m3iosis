@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIC-O-NOVM Exact Visualization</title>
+    <style>
+        body { 
+            margin: 0; 
+            background-color: #000000; 
+            color: #ffffff; 
+            overflow: hidden; 
+            font-family: 'Times New Roman', serif; 
+        }
+        #hud { 
+            position: absolute; 
+            top: 20px; 
+            left: 20px; 
+            background: rgba(0, 0, 0, 0.7); 
+            padding: 20px; 
+            border: 1px solid #333; 
+            pointer-events: none; 
+        }
+        h1 { 
+            margin: 0 0 15px 0; 
+            font-size: 1.2rem; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            color: #ffffff; 
+        }
+        .metric { 
+            margin: 10px 0; 
+            font-size: 1.1rem; 
+            color: #cccccc; 
+        }
+        .math { 
+            font-style: italic; 
+            font-family: 'Times New Roman', serif; 
+            letter-spacing: 1px;
+        }
+        .val { 
+            font-family: monospace; 
+            color: #00ffff; 
+            font-weight: bold; 
+            margin-left: 10px;
+        }
+        .status {
+            color: #ff00ff;
+            font-weight: bold;
+            font-family: monospace;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="hud">
+        <h1>SIC-O-NOVM Dynamics</h1>
+        <div class="metric"><span class="math">R(t) = R<sub>z</sub>(t) &middot; R<sub>x</sub>(&radic;2t) &middot; R<sub>z</sub>(&radic;3t)</span></div>
+        <div class="metric">Trace Inner Product: <span id="dot-product" class="val">-0.3333333333</span></div>
+        <div class="metric">Completeness: &Sigma; E<sub>i</sub> = I <span class="status">[ EXACT ]</span></div>
+        <div class="metric">Topology: <span style="color:#ffff00">Dense orbit on T&sup3;</span></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(2, 1.5, 3.5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // Interactive Controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Academic Bloch Sphere (Orthogonal Great Circles)
+        const circleGeo = new THREE.EdgesGeometry(new THREE.SphereGeometry(1, 64, 64));
+        const circleMat = new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.6 });
+        const blochSphere = new THREE.LineSegments(circleGeo, circleMat);
+        scene.add(blochSphere);
+
+        // Exact Static SIC-NOVM Vectors
+        const v0 = new THREE.Vector3(0, 0, 1);
+        const v1 = new THREE.Vector3(2 * Math.sqrt(2) / 3, 0, -1 / 3);
+        const v2 = new THREE.Vector3(-Math.sqrt(2) / 3, Math.sqrt(6) / 3, -1 / 3);
+        const v3 = new THREE.Vector3(-Math.sqrt(2) / 3, -Math.sqrt(6) / 3, -1 / 3);
+        const originalVertices = [v0, v1, v2, v3];
+
+        // High-Contrast Arrow Helpers
+        const colors = [0x00ffff, 0xff00ff, 0xffff00, 0xffffff]; // Cyan, Magenta, Yellow, White
+        const arrows = [];
+        for(let i=0; i<4; i++){
+            const arrow = new THREE.ArrowHelper(originalVertices[i], new THREE.Vector3(0,0,0), 1, colors[i], 0.08, 0.04);
+            scene.add(arrow);
+            arrows.push(arrow);
+        }
+
+        // Trails for Dense T3 Orbit
+        const trails = [[], [], [], []];
+        const maxTrail = 500; // Trail length memory
+        const trailLines = [];
+        for(let i=0; i<4; i++){
+            const geo = new THREE.BufferGeometry();
+            const mat = new THREE.LineBasicMaterial({ color: colors[i], transparent: true, opacity: 0.8 });
+            const line = new THREE.Line(geo, mat);
+            scene.add(line);
+            trailLines.push(line);
+        }
+
+        // Incommensurate Frequencies
+        const w0 = 1.0;
+        const w1 = Math.sqrt(2);
+        const w2 = Math.sqrt(3);
+        const clock = new THREE.Clock();
+
+        const dotDisplay = document.getElementById('dot-product');
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = clock.getElapsedTime() * 0.8; // Speed factor
+
+            // Quaternion composition preventing gimbal lock
+            const q0 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), w0 * t);
+            const q1 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), w1 * t);
+            const q2 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), w2 * t);
+
+            // Apply Rigid Rotation: R(t) = Rz(w0*t) * Rx(w1*t) * Rz(w2*t)
+            const R = new THREE.Quaternion().copy(q0).multiply(q1).multiply(q2);
+
+            const currentVertices = [];
+
+            for(let i=0; i<4; i++){
+                const v = originalVertices[i].clone().applyQuaternion(R);
+                currentVertices.push(v);
+                
+                // Update Arrow
+                arrows[i].setDirection(v);
+
+                // Update Trail
+                trails[i].push(v.clone());
+                if(trails[i].length > maxTrail) trails[i].shift();
+                trailLines[i].geometry.setFromPoints(trails[i]);
+            }
+
+            // Live Telemetry: Verify symmetry invariant is mathematically held
+            const dot = currentVertices[0].dot(currentVertices[1]);
+            dotDisplay.innerText = dot.toFixed(10);
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resizing seamlessly
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>

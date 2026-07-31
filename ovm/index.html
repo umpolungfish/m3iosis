@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OVM Viewer — Operator-Valued Measure Visualization</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; color: #ccc; font-family: 'Georgia', 'Times New Roman', serif; overflow: hidden; height: 100vh; }
+
+#selector-bar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+  background: rgba(10,10,20,0.92); border-bottom: 1px solid #222;
+  padding: 8px 16px; display: flex; gap: 6px; flex-wrap: wrap;
+}
+.sys-btn {
+  background: #1a1a2e; color: #888; border: 1px solid #333;
+  padding: 6px 14px; font-size: 0.82rem; cursor: pointer;
+  font-family: 'Georgia', serif; border-radius: 3px; transition: all 0.2s;
+}
+.sys-btn:hover { background: #252540; color: #ccc; border-color: #555; }
+.sys-btn.active { background: #2a2040; color: #fff; border-color: #8866cc; }
+
+#hud {
+  position: absolute; top: 60px; left: 16px; z-index: 10;
+  background: rgba(10,10,20,0.88); border: 1px solid #2a2a3a;
+  padding: 16px 20px; max-width: 380px; border-radius: 4px;
+}
+#hud h2 { font-size: 1.1rem; color: #fff; margin-bottom: 8px; letter-spacing: 1px; }
+#hud .tuple {
+  font-size: 1.6rem; color: #ffcc66; font-family: monospace;
+  letter-spacing: 2px; margin: 8px 0; word-break: break-all;
+}
+#hud .metric { margin: 6px 0; font-size: 0.9rem; color: #aaa; }
+#hud .metric .label { color: #888; }
+#hud .metric .val { color: #66ccff; font-family: monospace; margin-left: 6px; }
+#hud .metric .val.neg { color: #ff6666; }
+#hud .metric .val.pos { color: #66ff99; }
+#hud .badge {
+  display: inline-block; padding: 2px 8px; border-radius: 3px;
+  font-size: 0.75rem; margin-right: 4px; font-weight: bold;
+}
+.badge-psd { background: #1a3a1a; color: #66ff99; border: 1px solid #336633; }
+.badge-indef { background: #3a1a1a; color: #ff6666; border: 1px solid #663333; }
+.badge-static { background: #1a1a2e; color: #8888cc; border: 1px solid #333366; }
+.badge-osc { background: #2e1a2e; color: #cc88cc; border: 1px solid #663366; }
+.badge-complete { background: #1a2e1a; color: #88cc88; border: 1px solid #336633; }
+.badge-paracomp { background: #2e2e1a; color: #cccc88; border: 1px solid #666633; }
+
+#time-controls {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10;
+  background: rgba(10,10,20,0.9); border: 1px solid #333;
+  padding: 8px 16px; border-radius: 4px; display: flex; gap: 10px; align-items: center;
+}
+#time-controls button {
+  background: #1a1a2e; color: #ccc; border: 1px solid #444;
+  padding: 4px 12px; cursor: pointer; font-family: 'Georgia', serif; border-radius: 3px;
+}
+#time-controls button:hover { background: #252540; }
+#time-controls button.active { background: #2a2040; border-color: #8866cc; }
+#time-controls input[type=range] { width: 80px; }
+
+#info-footer {
+  position: absolute; bottom: 20px; right: 20px; z-index: 10;
+  font-size: 0.7rem; color: #555;
+}
+#info-footer a { color: #666; text-decoration: none; }
+#info-footer a:hover { color: #aaa; }
+</style>
+</head>
+<body>
+
+<div id="selector-bar">
+  <button class="sys-btn active" data-sys="sic_povm">SIC-POVM</button>
+  <button class="sys-btn" data-sys="sic_novm">SIC-NOVM</button>
+  <button class="sys-btn" data-sys="sic_o_povm">SIC-O-POVM</button>
+  <button class="sys-btn" data-sys="sic_o_novm">SIC-O-NOVM</button>
+  <button class="sys-btn" data-sys="ai_cpovm">AI-CPOVM</button>
+  <button class="sys-btn" data-sys="a_pc_povm">A-PC-POVM</button>
+  <button class="sys-btn" data-sys="s_pc_povm">S-PC-POVM</button>
+  <button class="sys-btn" data-sys="am_pc_povm">A⁻-PC-POVM</button>
+  <button class="sys-btn" data-sys="ai_novm">AI-NOVM</button>
+  <button class="sys-btn" data-sys="ai_po_ovm">AI-PO-OVM</button>
+  <button class="sys-btn" data-sys="a_po_povm">A-PO-POVM</button>
+  <button class="sys-btn" data-sys="s_po_povm">S-PO-POVM</button>
+  <button class="sys-btn" data-sys="sic_npovm">SIC-NPOVM</button>
+  <button class="sys-btn" data-sys="ai_cnovm">AI-CNOVM</button>
+  <button class="sys-btn" data-sys="ai_ic_novm">A⁻-IC-NOVM</button>
+  <button class="sys-btn" data-sys="ai_ic_povm">A⁻-IC-POVM</button>
+  <button class="sys-btn" data-sys="a_pc_povm_grid">A-PC-POVM²</button>
+</div>
+
+<div id="hud">
+  <h2 id="sys-name">SIC-POVM</h2>
+  <div class="tuple" id="sys-tuple">⟨𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑵⊙𐑒𐑳𐑴⟩</div>
+  <div id="sys-badges"></div>
+  <div id="sys-metrics"></div>
+</div>
+
+<div id="time-controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-pause" class="active">⏸ Pause</button>
+  <span style="color:#888;font-size:0.8rem;">Speed:</span>
+  <input type="range" id="speed-slider" min="0.1" max="3" step="0.1" value="0.8">
+  <span id="speed-label" style="color:#66ccff;font-family:monospace;font-size:0.8rem;">0.8×</span>
+  <span style="color:#555;font-size:0.75rem;" id="time-display">t = 0.000</span>
+</div>
+
+<div id="info-footer">
+  <a href="/home/mrnob0dy666/imsgct/ig-docs/ovm_taxonomy_grid.md" target="_blank">Grid</a> ·
+  OVM Viewer v1.1 · Math⊙perator
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// OVM SYSTEM DATA — 17 constructed operator-valued measures
+// ═══════════════════════════════════════════════════════════
+
+const SYSTEMS = {  sic_povm: {
+    name: "SIC-POVM", catalog: "sic_proved_low_d",
+    tuple: "⟨𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑵⊙𐑒𐑳𐑴⟩",
+    symmetry: "S", completeness: "IC", positivity: "+", dynamics: "static",
+    m: 4, bloch_norm: 1.0, trace: 0.5,
+    eigenvalues: [0.0, 0.5],
+    cross_overlap: 1/24,
+    grammar_distance: 5.31, tier: "O_∞",
+    tetrahedral: true, oscillating: false,
+    description: "Symmetric IC POVM — rank-1 projectors at tetrahedral vertices. d²=4 operators, equiangular, PSD. The original SIC-POVM. Cross-overlap 1/24 ≈ 0.0417."
+  },
+  sic_novm: {
+    name: "SIC-NOVM", catalog: "sic_novm",
+    tuple: "⟨𐑦𐑸𐑽𐑿𐑐𐑧𐑔𐑵⊙𐑒𐑳𐑭⟩",
+    symmetry: "S", completeness: "IC", positivity: "−", dynamics: "static",
+    m: 4, bloch_norm: 0.45, trace: 0.5,
+    eigenvalues: [-0.20, 0.70],
+    cross_overlap: -0.01,
+    grammar_distance: 5.31, tier: "O₂",
+    tetrahedral: true, oscillating: false,
+    description: "Symmetric IC NOVM — tetrahedral operators with Bloch norm 0.45 > EP threshold 0.25. Indefinite signature, negative cross-overlap −0.01. Z-winding from EP encircling."
+  },
+  sic_o_povm: {
+    name: "SIC-O-POVM", catalog: "sic_o_povm",
+    tuple: "⟨𐑦𐑥𐑽𐑹𐑐𐑪𐑔𐑵⊙𐑖𐑳𐑴⟩",
+    symmetry: "S", completeness: "IC", positivity: "+", dynamics: "oscillating",
+    m: 4, bloch_norm: 1.0, trace: 0.5,
+    eigenvalues: [0.0, 0.5],
+    cross_overlap: 1/24,
+    grammar_distance: 3.24, tier: "O_∞",
+    tetrahedral: true, oscillating: true,
+    description: "Symmetric IC Oscillating POVM — rigidly rotating SIC-POVM tetrahedron. R(t)=Rz(t)Rx(√2t)Rz(√3t). Dense T³ orbit. First oscillating system at O_∞. d(grammar)=3.24 — closest in family."
+  },
+  sic_o_novm: {
+    name: "SIC-O-NOVM", catalog: "sic_o_novm",
+    tuple: "⟨𐑦𐑥𐑽𐑿𐑐𐑪𐑔𐑵⊙𐑖𐑳𐑭⟩",
+    symmetry: "S", completeness: "IC", positivity: "−", dynamics: "oscillating",
+    m: 4, bloch_norm: 0.45, trace: 0.5,
+    eigenvalues: [-0.20, 0.70],
+    cross_overlap: -0.01,
+    grammar_distance: 4.34, tier: "O₂",
+    tetrahedral: true, oscillating: true,
+    description: "Symmetric IC Oscillating NOVM — rigidly rotating SIC-NOVM tetrahedron. Same rotation as SIC-O-POVM. Indefinite eigenvalues invariant under SO(3). d(SIC-O-NOVM, SIC-O-POVM)=3.11 — Φ and Ω gap."
+  },
+  ai_cpovm: {
+    name: "AI-CPOVM", catalog: "ai_cpovm",
+    tuple: "⟨𐑦𐑸𐑩𐑬𐑐𐑧𐑚𐑠⊙𐑓𐑳𐑷⟩",
+    symmetry: "A", completeness: "IC", positivity: "+", dynamics: "static",
+    m: 4, bloch_norm: null, trace: null,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: null, tier: "O₁",
+    tetrahedral: false, oscillating: false,
+    description: "Asymmetric IC POVM — 4 operators with distinct traces (0.4–0.6) and distinct Bloch vectors. No WH group covariance. Informationally complete but not equiangular. Subcritical tier O₁."
+  },  a_pc_povm: {
+    name: "A-PC-POVM", catalog: "asymmetric_paracomplete_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑾𐑬𐑐𐑧𐑚𐑵⊙𐑖𐑳𐑭⟩",
+    symmetry: "A", completeness: "PC", positivity: "+", dynamics: "static",
+    m: 3, bloch_norm: null, trace: null,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: 4.10, tier: "O₂",
+    tetrahedral: false, oscillating: false,
+    description: "Asymmetric Paracomplete Positive OVM — m=3 < d²=4 operators spanning a 3-dim proper subspace of B_sa(ℂ²). The σ_z direction is the paracomplete gap — truth-values undefined for observables outside the span. Two-step chirality Ħ=𐑖 from measurement→inference bridging across the gap. d(AI-CPOVM, A-PC-POVM)=4.47 — 5-primitive IC→PC mutation: Þ(𐑸→𐑥), Ř(𐑩→𐑾), ɢ(𐑠→𐑵), Ħ(𐑓→𐑖), Ω(𐑷→𐑭)."
+  },
+  s_pc_povm: {
+    name: "S-PC-POVM", catalog: "symmetric_paracomplete_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑐𐑧𐑔𐑜⊙𐑒𐑕𐑷⟩",
+    symmetry: "S", completeness: "PC", positivity: "+", dynamics: "static",
+    m: 3, bloch_norm: 1.0, trace: 0.667,
+    eigenvalues: [0.667, 0.000],
+    cross_overlap: 0.1111,
+    grammar_distance: 3.873, tier: "O₁",
+    tetrahedral: false, oscillating: false, equiangular: true,
+    description: "Symmetric Paracomplete Positive OVM — m=3 < d²=4 C₃-covariant rank-1 projectors in xy-plane. Equiangular cross-overlap 1/9. Bloch norm 1.0 (unit). Paracomplete gap: σ_z. One-step chirality Ħ=𐑒 — full symmetry collapses group navigation. E_k = (1/3)(I + n̂_k·σ⃗), n̂_k = equilateral triangle in xy-plane. d(grammar)=3.873."
+  },
+  am_pc_povm: {
+    name: "A⁻-PC-POVM", catalog: "antisymmetric_paracomplete_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑐𐑧𐑚𐑜⊙𐑖𐑳𐑷⟩",
+    symmetry: "A⁻", completeness: "PC", positivity: "+", dynamics: "static",
+    m: 3, bloch_norm: 1.0, trace: 0.667,
+    eigenvalues: [0.667, 0.000],
+    cross_overlap: 0.1111,
+    grammar_distance: 4.074, tier: "O₁",
+    tetrahedral: false, oscillating: false, anticommuting: true,
+    description: "Antisymmetric Paracomplete Positive OVM — Z₂-graded with {A₀,A₁}=0. E₀∼σ_x (grade 0), E₁∼σ_y (grade 1), E₂=I−E₀−E₁ (mixed). Heterogeneous spectra: E₀,E₁ at r=1/√2≈0.707 (λ=[0.569,0.098]), E₂ at r=1 (λ=[0.667,0]). d(S-PC-POVM, A⁻-PC-POVM)=1.67. d(grammar)=4.074."
+  },
+  ai_novm: {
+    name: "AI-NOVM", catalog: "asymmetric_ai_novm",
+    tuple: "⟨𐑨𐑰𐑽𐑗𐑐𐑪𐑲𐑠𐑢𐑒𐑳𐑷⟩",
+    symmetry: "A", completeness: "PC", positivity: "−", dynamics: "static",
+    m: 3, bloch_norm: null, trace: null,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: null, tier: "—",
+    tetrahedral: false, oscillating: false,
+    description: "Asymmetric Information-Incomplete NOVM — 3 operators with distinct spectra. m=3 < d²=4. Subcritical. The least SIC-like constructed system."
+  },  ai_po_ovm: {
+    name: "AI-PO-OVM", catalog: "ai_po_ovm",
+    tuple: "⟨𐑦𐑥𐑽𐑿𐑐𐑪𐑚𐑵⊙𐑖𐑳𐑭⟩",
+    symmetry: "A⁻", completeness: "PC", positivity: "−", dynamics: "oscillating",
+    m: 3, bloch_norm: 0.8, trace: 0.667,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: 4.45, tier: "O₂",
+    tetrahedral: false, oscillating: true, anticommuting: true,
+    description: "Antisymmetric Paracomplete Oscillating NOVM — Z₂-graded with incommensurate frequencies. E₀(t)~cos(t)σ_x, E₁(t)~sin(√2t)σ_y, E₂=I−E₀−E₁. Bloch norm 0.8 (below EP at small r but eigenvalues cross at some t). Anticommuting pair {E₀(t),E₁(t)}=0 for all t. d(SIC-O-NOVM, AI-PO-OVM)=1.00 — closest completeness-gap pair."
+  },
+  a_po_povm: {
+    name: "A-PO-POVM", catalog: "asymmetric_paracomplete_oscillating_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑞𐑧𐑚𐑵⊙𐑖𐑳𐑭⟩",
+    symmetry: "A", completeness: "PC", positivity: "+", dynamics: "oscillating",
+    m: 3, bloch_norm: 0.8, trace: 0.667,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: 3.847, tier: "O₂",
+    tetrahedral: false, oscillating: true,
+    description: "Asymmetric Paracomplete Oscillating Positive OVM — time-dependent E_k(t) with incommensurate frequencies ω₀=1, ω₁=√2. E₀(t)∼cos(t)σ_x (r₀=0.6), E₁(t)∼sin(√2t)σ_y (r₁=0.8). Dense orbit on T². PSD bound r₀²+r₁²=1 saturated. Thermal fidelity ƒ=𐑞 from time-averaging. d(A-PC-POVM, A-PO-POVM)=1.41 (Ř:𐑾→𐑽, ƒ:𐑐→𐑞). Gap: σ_z at all t."
+  },
+  s_po_povm: {
+    name: "S-PO-POVM", catalog: "symmetric_paracomplete_oscillating_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑞𐑧𐑚𐑵⊙𐑖𐑕𐑷⟩",
+    symmetry: "S", completeness: "PC", positivity: "+", dynamics: "oscillating",
+    m: 3, bloch_norm: 1.0, trace: 0.667,
+    eigenvalues: [0.667, 0.000],
+    cross_overlap: 0.1111,
+    grammar_distance: 3.821, tier: "O₁",
+    tetrahedral: true, oscillating: true, equiangular: true,
+    description: "Symmetric Paracomplete Oscillating Positive OVM — rigid SO(3) rotation of equilateral triangle. Same R(t)=Rz(t)Rx(√2t)Rz(√3t) as SIC-O-POVM. All spectral properties time-invariant (rigid rotation preserves inner products). Γ=𐑚 (gimel) — oscillation breaks static aleph cardinality. d(S-PC-POVM, S-PO-POVM)=2.61. Gap: rotating n̂_⊥(t)."
+  },
+  sic_npovm: {
+    name: "SIC-NPOVM", catalog: "sic_non_positive_ovm",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑐𐑧𐑔𐑵⊙𐑖𐑕𐑴⟩",
+    symmetry: "S", completeness: "IC", positivity: "−", dynamics: "static",
+    m: 4, bloch_norm: 0.65, trace: 0.5,
+    eigenvalues: [-0.12, 0.62],
+    cross_overlap: 0.015,
+    grammar_distance: 4.82, tier: "O₂",
+    tetrahedral: true, oscillating: false,
+    description: "Symmetric IC Non-Positive OVM — tetrahedral operators with partial parity (𐑬). Bloch norm 0.65 between PSD (1.0) and NOVM (0.45). Indefinite eigenvalues with small negativity (−0.12). Z₂ winding (𐑴). Two-step chiral memory (𐑖). Static near-equilibrium (𐑧). Bowtie topology (𐑥). Closest to SIC-O-POVM at Φ/Ç/Σ/Ω gap."
+  },  ai_cnovm: {
+    name: "AI-CNOVM", catalog: "ai_cnovm",
+    tuple: "⟨𐑦𐑸𐑩𐑿𐑐𐑧𐑔𐑵⊙𐑓𐑳𐑭⟩",
+    symmetry: "A", completeness: "IC", positivity: "−", dynamics: "static",
+    m: 4, bloch_norm: null, trace: null,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: null, tier: "O₂",
+    tetrahedral: false, oscillating: false,
+    description: "Asymmetric IC Negative OVM — symmetry-broken SIC-NOVM. Supervenience coupling (Ř=𐑩) replaces Clifford structure. Memoryless chirality (Ħ=𐑓). d(SIC-NOVM, AI-CNOVM)=2.19 — minimal symmetry-breaking transformation. Constructed by perturbing SIC-NOVM tetrahedron with non-uniform displacements. Preserves IC completeness and sum-to-I but breaks equiangularity."
+  },
+  ai_ic_novm: {
+    name: "A⁻-IC-NOVM", catalog: "ai_ic_novm",
+    tuple: "⟨𐑦𐑸𐑽𐑿𐑐𐑧𐑔𐑵⊙𐑖𐑳𐑭⟩",
+    symmetry: "A⁻", completeness: "IC", positivity: "−", dynamics: "static",
+    m: 4, bloch_norm: 0.45, trace: 0.5,
+    eigenvalues: [-0.20, 0.70],
+    cross_overlap: -0.01,
+    grammar_distance: 5.31, tier: "O₂",
+    tetrahedral: true, oscillating: false,
+    description: "Antisymmetric IC Negative OVM — Z₂-graded SIC-NOVM. Two-step chirality (Ħ=𐑖) encodes graded commutation E_iE_j=(−1)^{|i||j|}E_jE_i. Same Bloch norm 0.45 and eigenvalues [−0.20,0.70] as SIC-NOVM. Differs from SIC-NOVM by exactly ONE primitive (Ħ:𐑒→𐑖). d≈0.89 — closest pair after completeness gap. A⁻ signature {Ř=𐑽, Ħ=𐑖}: adjoint Clifford with Z₂ grading. Fills {Antisymmetric, IC, Negative, Static}."
+  },
+  ai_ic_povm: {
+    name: "A⁻-IC-POVM", catalog: "antisymmetric_ic_povm",
+    tuple: "⟨𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑵⊙𐑖𐑳𐑴⟩",
+    symmetry: "A⁻", completeness: "IC", positivity: "+", dynamics: "static",
+    m: 4, bloch_norm: 1.0, trace: 0.5,
+    eigenvalues: [0.0, 0.5],
+    cross_overlap: 1/24,
+    grammar_distance: 5.31, tier: "—",
+    tetrahedral: true, oscillating: false,
+    description: "Antisymmetric IC Positive OVM — Z₂-graded SIC-POVM. Two-step chirality (Ħ=𐑖). Same Bloch norm 1.0 and eigenvalues [0.0,0.5] as SIC-POVM. Differs from SIC-POVM by exactly ONE primitive (Ħ:𐑒→𐑖). Completes the static IC quadrant {S,A⁻}×{+,−} — all 4 now constructed. A⁻ signature {Ř=𐑽, Ħ=𐑖}: adjoint Clifford with Z₂ grading. Fills {Antisymmetric, IC, Positive, Static}."
+  },
+  a_pc_povm_grid: {
+    name: "A-PC-POVM²", catalog: "asymmetric_paracomplete_positive_static_ovm",
+    tuple: "⟨𐑦𐑸𐑩𐑬𐑐𐑧𐑲𐑠⊙𐑓𐑳𐑷⟩",
+    symmetry: "A", completeness: "PC", positivity: "+", dynamics: "static",
+    m: 3, bloch_norm: 0.2828, trace: 0.6667,
+    eigenvalues: [0.133, 0.533],
+    cross_overlap: null,
+    grammar_distance: null, tier: "—",
+    tetrahedral: false, oscillating: false,
+    description: "Asymmetric Paracomplete Positive OVM (grid variant) — Γ=𐑲 genuine local paracomplete. m=3 < d²=4 operators: E₀=(I+0.6σ_x)/3, E₁=(I+0.6σ_y)/3, E₂=I−E₀−E₁. All PSD, ΣE_k=I. σ_z is the paracomplete gap — rank-3 measurement map with kernel=span{σ_z}. Single-primitive mutation Γ:𐑚→𐑲 from AI-CPOVM. d(AI-CPOVM, A-PC-POVM)≈1.41."
+  }
+};
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let currentSys = 'sic_povm';
+let playing = false;
+let simTime = 0;
+let speed = 0.8;
+const w0 = 1.0, w1 = Math.sqrt(2), w2 = Math.sqrt(3);
+
+// ═══════════════════════════════════════════
+// THREE.JS SETUP
+// ═══════════════════════════════════════════
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(2, 1.5, 3.5);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.05;
+
+// Bloch sphere
+const sphereGeo = new THREE.EdgesGeometry(new THREE.SphereGeometry(1, 64, 64));
+const sphereMat = new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.5 });
+scene.add(new THREE.LineSegments(sphereGeo, sphereMat));
+
+// Tetrahedral Bloch vectors (unit)
+const TETRA = [
+  new THREE.Vector3(0, 0, 1),
+  new THREE.Vector3(2*Math.sqrt(2)/3, 0, -1/3),
+  new THREE.Vector3(-Math.sqrt(2)/3, Math.sqrt(6)/3, -1/3),
+  new THREE.Vector3(-Math.sqrt(2)/3, -Math.sqrt(6)/3, -1/3)
+];
+
+// Colors
+const COLORS = [0x00ffff, 0xff00ff, 0xffff00, 0xffffff]; // cyan, magenta, yellow, white
+
+// Dynamic objects
+let arrows = [], trailLines = [], trails = [[],[],[],[]];
+const maxTrail = 500;
+// ═══════════════════════════════════════════
+// CLEAR / BUILD VISUALIZATION
+// ═══════════════════════════════════════════
+
+function clearScene() {
+  arrows.forEach(a => scene.remove(a));
+  trailLines.forEach(l => scene.remove(l));
+  arrows = []; trailLines = []; trails = [[],[],[],[]];
+}
+
+function buildTetrahedral(sys) {
+  clearScene();
+  const n = sys.bloch_norm;
+  for (let i = 0; i < 4; i++) {
+    const v = TETRA[i].clone().multiplyScalar(n);
+    const arrow = new THREE.ArrowHelper(
+      v.clone().normalize(), new THREE.Vector3(0,0,0), n,
+      COLORS[i], 0.08, 0.04
+    );
+    scene.add(arrow);
+    arrows.push(arrow);
+
+    const geo = new THREE.BufferGeometry();
+    const mat = new THREE.LineBasicMaterial({ color: COLORS[i], transparent: true, opacity: 0.6 });
+    const line = new THREE.Line(geo, mat);
+    scene.add(line);
+    trailLines.push(line);
+    trails[i] = [];
+  }
+}
+
+function buildAIPOOVM(sys) {
+  clearScene();
+  const r = sys.bloch_norm;
+  const colors3 = [0x00ffff, 0xff00ff, 0xffff00];
+  for (let i = 0; i < 3; i++) {
+    const v = new THREE.Vector3(0, 0, 0);
+    if (i === 0) v.set(r, 0, 0);
+    else if (i === 1) v.set(0, 0, 0);
+    else v.set(-r, 0, 0);
+    
+    const len = v.length();
+    if (len > 0.001) {
+      const arrow = new THREE.ArrowHelper(v.clone().normalize(), new THREE.Vector3(0,0,0), len, colors3[i], 0.08, 0.04);
+      scene.add(arrow);
+      arrows.push(arrow);
+    } else {
+      const dotGeo = new THREE.SphereGeometry(0.03, 8, 8);
+      const dotMat = new THREE.MeshBasicMaterial({ color: colors3[i] });
+      const dot = new THREE.Mesh(dotGeo, dotMat);
+      scene.add(dot);
+      arrows.push(dot);
+    }
+
+    const geo = new THREE.BufferGeometry();
+    const mat = new THREE.LineBasicMaterial({ color: colors3[i], transparent: true, opacity: 0.6 });
+    const line = new THREE.Line(geo, mat);
+    scene.add(line);
+    trailLines.push(line);
+    trails[i] = [];
+  }
+}
+
+function buildDefault(sys) {
+  clearScene();
+  const m = sys.m || 4;
+  const cols = [0x00ffff, 0xff00ff, 0xffff00, 0xffffff];
+  for (let i = 0; i < m; i++) {
+    const phi = i * Math.PI * 2 / m;
+    const theta = Math.PI / 3;
+    const v = new THREE.Vector3(
+      Math.sin(theta) * Math.cos(phi),
+      Math.sin(theta) * Math.sin(phi),
+      Math.cos(theta)
+    );
+    const dotGeo = new THREE.SphereGeometry(0.05, 16, 16);
+    const dotMat = new THREE.MeshBasicMaterial({ color: cols[i] });
+    const dot = new THREE.Mesh(dotGeo, dotMat);
+    dot.position.copy(v);
+    scene.add(dot);
+    arrows.push(dot);
+    trails[i] = []; trailLines.push(null);
+  }
+}
+
+function buildVisualization(sys) {
+  if (sys.tetrahedral) buildTetrahedral(sys);
+  else if (sys.anticommuting) buildAIPOOVM(sys);
+  else buildDefault(sys);
+}
+// ═══════════════════════════════════════════
+// HUD UPDATE
+// ═══════════════════════════════════════════
+
+function updateHUD(sys) {
+  document.getElementById('sys-name').textContent = sys.name;
+  document.getElementById('sys-tuple').textContent = sys.tuple;
+
+  let badges = '';
+  if (sys.positivity === '+') badges += '<span class="badge badge-psd">PSD</span>';
+  else badges += '<span class="badge badge-indef">INDEF</span>';
+  if (sys.dynamics === 'static') badges += '<span class="badge badge-static">STATIC</span>';
+  else badges += '<span class="badge badge-osc">OSCILLATING</span>';
+  if (sys.completeness === 'IC') badges += '<span class="badge badge-complete">COMPLETE</span>';
+  else badges += '<span class="badge badge-paracomp">PARACOMPLETE</span>';
+  if (sys.tier) badges += ' <span style="color:#ffcc66;font-size:0.75rem;">'+sys.tier+'</span>';
+  document.getElementById('sys-badges').innerHTML = badges;
+
+  let metrics = '';
+  metrics += '<div class="metric"><span class="label">Symmetry:</span><span class="val">'+sys.symmetry+'</span></div>';
+  metrics += '<div class="metric"><span class="label">Operators m:</span><span class="val">'+sys.m+'</span></div>';
+  if (sys.bloch_norm !== null)
+    metrics += '<div class="metric"><span class="label">Bloch norm n:</span><span class="val">'+sys.bloch_norm.toFixed(2)+'</span></div>';
+  if (sys.eigenvalues)
+    metrics += '<div class="metric"><span class="label">Eigenvalues:</span><span class="val '+(sys.eigenvalues[0]<0?'neg':'pos')+'">['+sys.eigenvalues.map(v=>v.toFixed(2)).join(', ')+']</span></div>';
+  if (sys.cross_overlap !== null)
+    metrics += '<div class="metric"><span class="label">Cross-overlap:</span><span class="val">'+sys.cross_overlap.toFixed(4)+'</span></div>';
+  if (sys.grammar_distance !== null)
+    metrics += '<div class="metric"><span class="label">Grammar dist:</span><span class="val">'+sys.grammar_distance.toFixed(2)+'</span></div>';
+  metrics += '<div class="metric" style="margin-top:8px;color:#777;font-size:0.8rem;">'+sys.description+'</div>';
+  document.getElementById('sys-metrics').innerHTML = metrics;
+}
+
+// ═══════════════════════════════════════════
+// SYSTEM SWITCHING
+// ═══════════════════════════════════════════
+
+function switchSystem(key) {
+  currentSys = key;
+  const sys = SYSTEMS[key];
+  updateHUD(sys);
+  buildVisualization(sys);
+  simTime = 0;
+
+  document.querySelectorAll('.sys-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-sys="'+key+'"]').classList.add('active');
+
+  if (sys.oscillating) {
+    playing = true;
+    document.getElementById('btn-play').classList.add('active');
+    document.getElementById('btn-pause').classList.remove('active');
+  } else {
+    playing = false;
+    document.getElementById('btn-play').classList.remove('active');
+    document.getElementById('btn-pause').classList.add('active');
+  }
+}
+
+document.querySelectorAll('.sys-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchSystem(btn.dataset.sys));
+});
+// ═══════════════════════════════════════════
+// TIME CONTROLS
+// ═══════════════════════════════════════════
+
+document.getElementById('btn-play').addEventListener('click', () => {
+  playing = true;
+  document.getElementById('btn-play').classList.add('active');
+  document.getElementById('btn-pause').classList.remove('active');
+});
+document.getElementById('btn-pause').addEventListener('click', () => {
+  playing = false;
+  document.getElementById('btn-play').classList.remove('active');
+  document.getElementById('btn-pause').classList.add('active');
+});
+document.getElementById('speed-slider').addEventListener('input', (e) => {
+  speed = parseFloat(e.target.value);
+  document.getElementById('speed-label').textContent = speed.toFixed(1)+'\u00D7';
+});
+
+// ═══════════════════════════════════════════
+// ANIMATION LOOP
+// ═══════════════════════════════════════════
+
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  
+  const dt = clock.getDelta();
+  const sys = SYSTEMS[currentSys];
+  
+  if (playing && sys.oscillating) {
+    simTime += dt * speed;
+    
+    if (sys.tetrahedral) {
+      const q0 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1), w0 * simTime);
+      const q1 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), w1 * simTime);
+      const q2 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1), w2 * simTime);
+      const R = new THREE.Quaternion().copy(q0).multiply(q1).multiply(q2);
+      const n = sys.bloch_norm;
+      
+      for (let i = 0; i < 4; i++) {
+        const v = TETRA[i].clone().applyQuaternion(R).multiplyScalar(n);
+        scene.remove(arrows[i]);
+        const arrow = new THREE.ArrowHelper(v.clone().normalize(), new THREE.Vector3(0,0,0), n, COLORS[i], 0.08, 0.04);
+        scene.add(arrow);
+        arrows[i] = arrow;
+        
+        trails[i].push(v.clone());
+        if (trails[i].length > maxTrail) trails[i].shift();
+        if (trailLines[i]) trailLines[i].geometry.setFromPoints(trails[i]);
+      }
+    } else if (sys.anticommuting) {
+      const r = sys.bloch_norm;
+      const a = r * Math.cos(w0 * simTime);
+      const b = r * Math.sin(w1 * simTime);
+      const vecs = [
+        new THREE.Vector3(a, 0, 0),
+        new THREE.Vector3(0, b, 0),
+        new THREE.Vector3(-a, -b, 0)
+      ];
+      
+      for (let i = 0; i < 3; i++) {
+        const v = vecs[i];
+        const len = v.length();
+        scene.remove(arrows[i]);
+        if (len > 0.005) {
+          const arrow = new THREE.ArrowHelper(v.clone().normalize(), new THREE.Vector3(0,0,0), len, [0x00ffff,0xff00ff,0xffff00][i], 0.08, 0.04);
+          scene.add(arrow);
+          arrows[i] = arrow;
+        } else {
+          const dotGeo = new THREE.SphereGeometry(0.03, 8, 8);
+          const dotMat = new THREE.MeshBasicMaterial({ color: [0x00ffff,0xff00ff,0xffff00][i] });
+          const dot = new THREE.Mesh(dotGeo, dotMat);
+          scene.add(dot);
+          arrows[i] = dot;
+        }
+        
+        trails[i].push(v.clone());
+        if (trails[i].length > maxTrail) trails[i].shift();
+        if (trailLines[i]) trailLines[i].geometry.setFromPoints(trails[i]);
+      }
+    }
+  }
+  
+  document.getElementById('time-display').textContent = 't = ' + simTime.toFixed(3);
+  
+  controls.update();
+  renderer.render(scene, camera);
+}
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Keyboard shortcuts
+window.addEventListener('keydown', (e) => {
+  const keys = ['1','2','3','4','5','6','7','8','9','0','-','=','q','w','e','r','t'];
+  const sysKeys = ['sic_povm','sic_novm','sic_o_povm','sic_o_novm','ai_cpovm','a_pc_povm','s_pc_povm','am_pc_povm','ai_novm','ai_po_ovm','a_po_povm','s_po_povm','sic_npovm','ai_cnovm','ai_ic_novm','ai_ic_povm','a_pc_povm_grid'];
+  const idx = keys.indexOf(e.key);
+  if (idx >= 0) switchSystem(sysKeys[idx]);
+  if (e.key === ' ') { e.preventDefault(); playing = !playing; 
+    document.getElementById('btn-play').classList.toggle('active', playing);
+    document.getElementById('btn-pause').classList.toggle('active', !playing);
+  }
+});
+
+// Start
+switchSystem('sic_povm');
+animate();
+</script>
+</body>
+</html>
