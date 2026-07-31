@@ -11,7 +11,7 @@ body { background: #0a0a0f; color: #ccc; font-family: 'Georgia', 'Times New Roma
 #selector-bar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 10;
   background: rgba(10,10,20,0.92); border-bottom: 1px solid #222;
-  padding: 8px 16px; display: flex; gap: 6px; flex-wrap: wrap;
+  padding: 8px 16px; display: flex; gap: 6px; flex-direction: column; gap: 2px; padding: 4px 8px;
 }
 .sys-btn {
   background: #1a1a2e; color: #888; border: 1px solid #333;
@@ -22,7 +22,7 @@ body { background: #0a0a0f; color: #ccc; font-family: 'Georgia', 'Times New Roma
 .sys-btn.active { background: #2a2040; color: #fff; border-color: #8866cc; }
 
 #hud {
-  position: absolute; top: 60px; left: 16px; z-index: 10;
+  position: absolute; top: 138px; left: 16px; z-index: 10;
   background: rgba(10,10,20,0.88); border: 1px solid #2a2a3a;
   padding: 16px 20px; max-width: 380px; border-radius: 4px;
 }
@@ -66,28 +66,69 @@ body { background: #0a0a0f; color: #ccc; font-family: 'Georgia', 'Times New Roma
 }
 #info-footer a { color: #666; text-decoration: none; }
 #info-footer a:hover { color: #aaa; }
+
+.sym-group {
+  display: flex; gap: 4px; align-items: center;
+  padding: 1px 8px; border-left: 2px solid #333;
+  margin-left: 2px;
+}
+.sym-header {
+  font-size: 0.65rem; text-transform: uppercase;
+  letter-spacing: 1px; margin-right: 6px;
+  white-space: nowrap; opacity: 0.85;
+  font-family: "Georgia", serif; min-width: 80px; text-align: right;
+}
 </style>
 </head>
 <body>
 
 <div id="selector-bar">
-  <button class="sys-btn active" data-sys="sic_povm">SIC-POVM</button>
-  <button class="sys-btn" data-sys="sic_novm">SIC-NOVM</button>
-  <button class="sys-btn" data-sys="sic_o_povm">SIC-O-POVM</button>
-  <button class="sys-btn" data-sys="sic_o_novm">SIC-O-NOVM</button>
-  <button class="sys-btn" data-sys="ai_cpovm">AI-CPOVM</button>
-  <button class="sys-btn" data-sys="a_pc_povm">A-PC-POVM</button>
-  <button class="sys-btn" data-sys="s_pc_povm">S-PC-POVM</button>
-  <button class="sys-btn" data-sys="am_pc_povm">A⁻-PC-POVM</button>
-  <button class="sys-btn" data-sys="ai_novm">AI-NOVM</button>
-  <button class="sys-btn" data-sys="ai_po_ovm">AI-PO-OVM</button>
-  <button class="sys-btn" data-sys="a_po_povm">A-PO-POVM</button>
-  <button class="sys-btn" data-sys="s_po_povm">S-PO-POVM</button>
-  <button class="sys-btn" data-sys="sic_npovm">SIC-NPOVM</button>
-  <button class="sys-btn" data-sys="ai_cnovm">AI-CNOVM</button>
-  <button class="sys-btn" data-sys="ai_ic_novm">A⁻-IC-NOVM</button>
-  <button class="sys-btn" data-sys="ai_ic_povm">A⁻-IC-POVM</button>
-  <button class="sys-btn" data-sys="a_pc_povm_grid">A-PC-POVM²</button>
+  <div class="sym-group">
+    <span class="sym-header" style="color:#66ff99">Symmetric</span>
+    <button class="sys-btn active" data-sys="sic_povm">SIC-POVM</button>
+    <button class="sys-btn" data-sys="sic_novm">SIC-NOVM</button>
+    <button class="sys-btn" data-sys="sic_o_povm">SIC-O-POVM</button>
+    <button class="sys-btn" data-sys="sic_o_novm">SIC-O-NOVM</button>
+    <button class="sys-btn" data-sys="s_pc_povm">S-PC-POVM</button>
+    <button class="sys-btn" data-sys="s_po_povm">S-PO-POVM</button>
+    <button class="sys-btn" data-sys="sic_npovm">SIC-NPOVM</button>
+    <button class="sys-btn" data-sys="spc_novm">S-PC-NOVM</button>
+    <button class="sys-btn" data-sys="spc_novm_o">S-PC-NOVM-O</button>
+  </div>
+  <div class="sym-group">
+    <span class="sym-header" style="color:#ff9966">Asymmetric</span>
+    <button class="sys-btn" data-sys="ai_cpovm">AI-CPOVM</button>
+    <button class="sys-btn" data-sys="a_pc_povm">A-PC-POVM</button>
+    <button class="sys-btn" data-sys="ai_novm">AI-NOVM</button>
+    <button class="sys-btn" data-sys="a_po_povm">A-PO-POVM</button>
+    <button class="sys-btn" data-sys="ai_cnovm">AI-CNOVM</button>
+    <button class="sys-btn" data-sys="a_pc_povm_grid">A-PC-POVM²</button>
+    <button class="sys-btn" data-sys="a_ic_povm_o">A-IC-POVM-O</button>
+    <button class="sys-btn" data-sys="a_ic_novm_o">A-IC-NOVM-O</button>
+    <button class="sys-btn" data-sys="a_pc_novm_o">A-PC-NOVM-O</button>
+  </div>
+  <div class="sym-group">
+    <span class="sym-header" style="color:#cc88cc">Antisymmetric</span>
+    <button class="sys-btn" data-sys="am_pc_povm">A⁻-PC-POVM</button>
+    <button class="sys-btn" data-sys="ai_po_ovm">AI-PO-OVM</button>
+    <button class="sys-btn" data-sys="ai_ic_novm">A⁻-IC-NOVM</button>
+    <button class="sys-btn" data-sys="ai_ic_povm">A⁻-IC-POVM</button>
+    <button class="sys-btn" data-sys="apc_novm">A⁻-PC-NOVM</button>
+    <button class="sys-btn" data-sys="apc_povm_o">A⁻-PC-POVM-O</button>
+    <button class="sys-btn" data-sys="aic_povm_o">A⁻-IC-POVM-O</button>
+    <button class="sys-btn" data-sys="aic_novm_o">A⁻-IC-NOVM-O</button>
+  </div>
+  <div class="sym-group">
+    <span class="sym-header" style="color:#ff88cc">SUSY</span>
+    <button class="sys-btn" data-sys="susy_ic_povm">SUSY-IC-POVM</button>
+    <button class="sys-btn" data-sys="susy_ic_novm">SUSY-IC-NOVM</button>
+    <button class="sys-btn" data-sys="susy_pc_povm">SUSY-PC-POVM</button>
+    <button class="sys-btn" data-sys="susy_pc_novm">SUSY-PC-NOVM</button>
+    <button class="sys-btn" data-sys="susy_ic_povm_o">SUSY-IC-POVM-O</button>
+    <button class="sys-btn" data-sys="susy_ic_novm_o">SUSY-IC-NOVM-O</button>
+    <button class="sys-btn" data-sys="susy_pc_povm_o">SUSY-PC-POVM-O</button>
+    <button class="sys-btn" data-sys="susy_pc_novm_o">SUSY-PC-NOVM-O</button>
+  </div>
 </div>
 
 <div id="hud">
@@ -108,7 +149,7 @@ body { background: #0a0a0f; color: #ccc; font-family: 'Georgia', 'Times New Roma
 
 <div id="info-footer">
   <a href="/home/mrnob0dy666/imsgct/ig-docs/ovm_taxonomy_grid.md" target="_blank">Grid</a> ·
-  OVM Viewer v1.1 · Math⊙perator
+  OVM Viewer v1.3 · 34 systems · Math⊙perator
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -116,7 +157,7 @@ body { background: #0a0a0f; color: #ccc; font-family: 'Georgia', 'Times New Roma
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// OVM SYSTEM DATA — 17 constructed operator-valued measures
+// OVM SYSTEM DATA — 34 constructed operator-valued measures (incl. 8 SUSY)
 // ═══════════════════════════════════════════════════════════
 
 const SYSTEMS = {  sic_povm: {
@@ -302,7 +343,195 @@ const SYSTEMS = {  sic_povm: {
     grammar_distance: null, tier: "—",
     tetrahedral: false, oscillating: false,
     description: "Asymmetric Paracomplete Positive OVM (grid variant) — Γ=𐑲 genuine local paracomplete. m=3 < d²=4 operators: E₀=(I+0.6σ_x)/3, E₁=(I+0.6σ_y)/3, E₂=I−E₀−E₁. All PSD, ΣE_k=I. σ_z is the paracomplete gap — rank-3 measurement map with kernel=span{σ_z}. Single-primitive mutation Γ:𐑚→𐑲 from AI-CPOVM. d(AI-CPOVM, A-PC-POVM)≈1.41."
-  }
+  },
+
+  spc_novm: {
+    name: "S-PC-NOVM", catalog: "symmetric_paracomplete_negative_static_ovm",
+    tuple: "⟨𐑦𐑥𐑽𐑿𐑐𐑧𐑔𐑜⊙𐑒𐑕𐑭⟩",
+    symmetry: "S", completeness: "PC", positivity: "−", dynamics: "static",
+    m: 3, bloch_norm: 1.732, trace: 0.667,
+    eigenvalues: [-0.244, 0.911],
+    cross_overlap: -0.1111,
+    grammar_distance: 5.67, tier: "O₂",
+    tetrahedral: false, oscillating: false, equiangular: true,
+    description: "Symmetric Paracomplete Negative OVM. C3-symmetric m=3. E_k=(1/3)I+(sqrt3/3)n_k.sigma. Eigenvalues (1±sqrt3)/3. Gap: sigma_z. d(grammar)=5.67."
+  },
+  apc_novm: {
+    name: "A⁻-PC-NOVM", catalog: "asymmetric_paracomplete_negative_static_ovm",
+    tuple: "⟨𐑦𐑥𐑽𐑿𐑐𐑧𐑚𐑜⊙𐑖𐑳𐑭⟩",
+    symmetry: "A⁻", completeness: "PC", positivity: "−", dynamics: "static",
+    m: 2, bloch_norm: 0.866, trace: 1.0,
+    eigenvalues: [-0.366, 1.366],
+    cross_overlap: -1.0,
+    grammar_distance: null, tier: "—",
+    tetrahedral: false, oscillating: false, anticommuting: false,
+    description: "Antisymmetric Paracomplete Negative OVM. Z2-graded pair. m=2. {E0,E1}=-I. Span rank 2<4."
+  },
+  apc_povm_o: {
+    name: "A⁻-PC-POVM-O", catalog: "antisymmetric_paracomplete_positive_oscillating_ovm",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑐𐑪𐑚𐑜⊙𐑖𐑳𐑷⟩",
+    symmetry: "A⁻", completeness: "PC", positivity: "+", dynamics: "oscillating",
+    m: 2, bloch_norm: 1.0, trace: 1.0,
+    eigenvalues: [0.0, 1.0],
+    cross_overlap: 0.0,
+    grammar_distance: null, tier: "—",
+    tetrahedral: false, oscillating: true, anticommuting: true,
+    description: "Antisymmetric Paracomplete Positive Oscillating OVM. Rotating Z2-graded projectors. {E0,E1}=0 for all t."
+  },
+  spc_novm_o: {
+    name: "S-PC-NOVM-O", catalog: null,
+    tuple: "⟨𐑦𐑥𐑽𐑿𐑐𐑪𐑔𐑜⊙𐑒𐑕𐑭⟩",
+    symmetry: "S", completeness: "PC", positivity: "−", dynamics: "oscillating",
+    m: 3, bloch_norm: 1.732, trace: 0.667,
+    eigenvalues: [-0.244, 0.911],
+    cross_overlap: -0.1111,
+    grammar_distance: null, tier: "—",
+    tetrahedral: false, oscillating: true, equiangular: true,
+    description: "Symmetric Paracomplete Negative Oscillating OVM. Rigidly rotating C3 triangle. Spectral invariants time-independent."
+  },
+  aic_povm_o: {
+    name: "A⁻-IC-POVM-O", catalog: null,
+    tuple: "⟨𐑦𐑥𐑽𐑹𐑐𐑪𐑔𐑵⊙𐑖𐑳𐑴⟩",
+    symmetry: "A⁻", completeness: "IC", positivity: "+", dynamics: "oscillating",
+    m: 4, bloch_norm: 1.0, trace: 0.5,
+    eigenvalues: [0.0, 0.5],
+    cross_overlap: 0.0417,
+    grammar_distance: null, tier: "—",
+    tetrahedral: true, oscillating: true,
+    description: "Antisymmetric IC Positive Oscillating OVM. Rotating Z2-graded tetrahedral SIC."
+  },
+  aic_novm_o: {
+    name: "A⁻-IC-NOVM-O", catalog: null,
+    tuple: "⟨𐑦𐑥𐑽𐑿𐑐𐑪𐑔𐑵⊙𐑖𐑳𐑭⟩",
+    symmetry: "A⁻", completeness: "IC", positivity: "−", dynamics: "oscillating",
+    m: 4, bloch_norm: 0.45, trace: 0.5,
+    eigenvalues: [-0.2, 0.7],
+    cross_overlap: -0.01,
+    grammar_distance: null, tier: "—",
+    tetrahedral: true, oscillating: true,
+    description: "Antisymmetric IC Negative Oscillating OVM. Rotating Z2-graded indefinite tetrahedron."
+  },
+  a_ic_povm_o: {
+    name: "A-IC-POVM-O", catalog: null,
+    tuple: "⟨𐑦𐑥𐑩𐑬𐑐𐑪𐑚𐑠⊙𐑓𐑳𐑷⟩",
+    symmetry: "A", completeness: "IC", positivity: "+", dynamics: "oscillating",
+    m: 4, bloch_norm: null, trace: null,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: null, tier: "—",
+    tetrahedral: false, oscillating: true,
+    description: "Asymmetric IC Positive Oscillating OVM. Rotating AI-CPOVM. Supervenience, memoryless, sequential, mesoscale IC."
+  },
+  a_ic_novm_o: {
+    name: "A-IC-NOVM-O", catalog: null,
+    tuple: "⟨𐑦𐑥𐑩𐑿𐑐𐑪𐑔𐑵⊙𐑓𐑳𐑭⟩",
+    symmetry: "A", completeness: "IC", positivity: "−", dynamics: "oscillating",
+    m: 4, bloch_norm: null, trace: null,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: null, tier: "—",
+    tetrahedral: false, oscillating: true,
+    description: "Asymmetric IC Negative Oscillating OVM. Rotating AI-CNOVM. True IC, supervenience, Z-winding."
+  },
+  susy_ic_povm: {
+    name: "SUSY-IC-POVM", catalog: "supersymmetric_informationally_complete_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑰𐑽𐑬𐑐𐑧𐑔𐑝⊙𐑖𐑙𐑴⟩",
+    symmetry: "SUSY", completeness: "IC", positivity: "+", dynamics: "static",
+    m: 4, bloch_norm: 1.0, trace: 0.5,
+    eigenvalues: [0.0, 0.5],
+    cross_overlap: 0.0417,
+    grammar_distance: 3.39, tier: "O2",
+    tetrahedral: true, oscillating: false,
+    description: "Supersymmetric IC Positive OVM. Z2-graded SIC-POVM with superalgebra structure. Partial parity encoding boson/fermion grading. 1:1 stoichiometry — each bosonic operator paired with a fermionic superpartner. Two-step chirality from supercharge action Q: boson->fermion->boson."
+  },
+  susy_ic_novm: {
+    name: "SUSY-IC-NOVM", catalog: "supersymmetric_informationally_complete_non_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑐𐑧𐑔𐑵⊙𐑖𐑙𐑭⟩",
+    symmetry: "SUSY", completeness: "IC", positivity: "-", dynamics: "static",
+    m: 4, bloch_norm: 0.45, trace: 0.5,
+    eigenvalues: [-0.2, 0.7],
+    cross_overlap: -0.01,
+    grammar_distance: 2.97, tier: "O2",
+    tetrahedral: true, oscillating: false,
+    description: "Supersymmetric IC Negative OVM. Indefinite supermultiplet with Z-winding. Closest SUSY system to grammar (d=2.97). Negative eigenvalues from fermionic sector."
+  },
+  susy_pc_povm: {
+    name: "SUSY-PC-POVM", catalog: "supersymmetric_paracomplete_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑐𐑧𐑚𐑝⊙𐑖𐑙𐑷⟩",
+    symmetry: "SUSY", completeness: "PC", positivity: "+", dynamics: "static",
+    m: 3, bloch_norm: 0.8, trace: 0.667,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: 3.95, tier: "O1",
+    tetrahedral: false, oscillating: false,
+    description: "Supersymmetric Paracomplete Positive OVM. m=3 < d^2=4 operators with superpartner gap. Gimel mesoscale cardinality. SUSY algebra restricts the supermultiplet to a proper subspace."
+  },
+  susy_pc_novm: {
+    name: "SUSY-PC-NOVM", catalog: "supersymmetric_paracomplete_non_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑐𐑧𐑚𐑝⊙𐑖𐑕𐑴⟩",
+    symmetry: "SUSY", completeness: "PC", positivity: "-", dynamics: "static",
+    m: 3, bloch_norm: 0.8, trace: 0.667,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: 3.81, tier: "O2",
+    tetrahedral: false, oscillating: false,
+    description: "Supersymmetric Paracomplete Negative OVM. Paracomplete with indefinite supermultiplet. Many identical equiangular SUSY operators. Z2 winding."
+  },
+  susy_ic_povm_o: {
+    name: "SUSY-IC-POVM-O", catalog: "supersymmetric_informationally_complete_oscillating_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑐𐑧𐑔𐑵⊙𐑖𐑕𐑭⟩",
+    symmetry: "SUSY", completeness: "IC", positivity: "+", dynamics: "oscillating",
+    m: 4, bloch_norm: 1.0, trace: 0.5,
+    eigenvalues: [0.0, 0.5],
+    cross_overlap: 0.0417,
+    grammar_distance: 3.13, tier: "O2",
+    tetrahedral: true, oscillating: true,
+    description: "Supersymmetric IC Oscillating Positive OVM. Rotating supermultiplet under R(t). Supercharge Q commutes with time evolution. Z-winding from SUSY-preserving rotation."
+  },
+  susy_ic_novm_o: {
+    name: "SUSY-IC-NOVM-O", catalog: "supersymmetric_informationally_complete_oscillating_non_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑐𐑧𐑚𐑵⊙𐑖𐑕𐑴⟩",
+    symmetry: "SUSY", completeness: "IC", positivity: "-", dynamics: "oscillating",
+    m: 4, bloch_norm: 0.45, trace: 0.5,
+    eigenvalues: [-0.2, 0.7],
+    cross_overlap: -0.01,
+    grammar_distance: 3.39, tier: "O2",
+    tetrahedral: true, oscillating: true,
+    description: "Supersymmetric IC Oscillating Negative OVM. Rotating indefinite supermultiplet. Z2 winding preserved under SO(3). Boson/fermion eigenvalues oscillate in phase."
+  },
+  susy_pc_povm_o: {
+    name: "SUSY-PC-POVM-O", catalog: "supersymmetric_paracomplete_oscillating_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑐𐑧𐑚𐑝⊙𐑖𐑕𐑷⟩",
+    symmetry: "SUSY", completeness: "PC", positivity: "+", dynamics: "oscillating",
+    m: 3, bloch_norm: 0.8, trace: 0.667,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: 4.07, tier: "O1",
+    tetrahedral: false, oscillating: true,
+    description: "Supersymmetric Paracomplete Oscillating Positive OVM. Rotating SUSY paracomplete operators. Superpartner gap rotates with time. Highest grammar distance among SUSY systems (d=4.07)."
+  },
+  susy_pc_novm_o: {
+    name: "SUSY-PC-NOVM-O", catalog: "supersymmetric_paracomplete_oscillating_non_positive_operator_valued_measure",
+    tuple: "⟨𐑦𐑥𐑽𐑬𐑞𐑧𐑚𐑵⊙𐑖𐑕𐑷⟩",
+    symmetry: "SUSY", completeness: "PC", positivity: "-", dynamics: "oscillating",
+    m: 3, bloch_norm: 0.8, trace: 0.667,
+    eigenvalues: null,
+    cross_overlap: null,
+    grammar_distance: 3.82, tier: "O1",
+    tetrahedral: false, oscillating: true,
+    description: "Supersymmetric Paracomplete Oscillating Negative OVM. Thermal fidelity — time-averaged SUSY breaking. The only SUSY system with thermal rather than quantum fidelity."
+  },
+  a_pc_novm_o: {
+    name: "A-PC-NOVM-O", catalog: null,
+    tuple: "⟨𐑦𐑥𐑩𐑿𐑐𐑪𐑲𐑠⊙𐑓𐑳𐑭⟩",
+    symmetry: "A", completeness: "PC", positivity: "−", dynamics: "oscillating",
+    m: 2, bloch_norm: 0.866, trace: 1.0,
+    eigenvalues: [-0.366, 1.366],
+    cross_overlap: -1.0,
+    grammar_distance: null, tier: "—",
+    tetrahedral: false, oscillating: true,
+    description: "Asymmetric Paracomplete Negative Oscillating OVM. E0=I/2+a.sigma_x, a=sqrt3/2. Beth-local, supervenience. 4-primitive mutation."
+  },
 };
 // ═══════════════════════════════════════════
 // STATE
@@ -351,9 +580,23 @@ const maxTrail = 500;
 // ═══════════════════════════════════════════
 
 function clearScene() {
-  arrows.forEach(a => scene.remove(a));
-  trailLines.forEach(l => scene.remove(l));
-  arrows = []; trailLines = []; trails = [[],[],[],[]];
+  // Remove and dispose all dynamic scene objects
+  arrows.forEach(a => {
+    if (!a) return;
+    scene.remove(a);
+    if (a.geometry) a.geometry.dispose();
+    if (a.material) {
+      if (Array.isArray(a.material)) a.material.forEach(m => m.dispose());
+      else a.material.dispose();
+    }
+  });
+  trailLines.forEach(l => {
+    if (!l) return;
+    scene.remove(l);
+    if (l.geometry) l.geometry.dispose();
+    if (l.material) l.material.dispose();
+  });
+  arrows = []; trailLines = []; trails = [];
 }
 
 function buildTetrahedral(sys) {
@@ -474,10 +717,11 @@ function updateHUD(sys) {
 // ═══════════════════════════════════════════
 
 function switchSystem(key) {
+  clearScene();
   currentSys = key;
   const sys = SYSTEMS[key];
-  updateHUD(sys);
   buildVisualization(sys);
+  updateHUD(sys);
   simTime = 0;
 
   document.querySelectorAll('.sys-btn').forEach(b => b.classList.remove('active'));
@@ -599,8 +843,8 @@ window.addEventListener('resize', () => {
 
 // Keyboard shortcuts
 window.addEventListener('keydown', (e) => {
-  const keys = ['1','2','3','4','5','6','7','8','9','0','-','=','q','w','e','r','t'];
-  const sysKeys = ['sic_povm','sic_novm','sic_o_povm','sic_o_novm','ai_cpovm','a_pc_povm','s_pc_povm','am_pc_povm','ai_novm','ai_po_ovm','a_po_povm','s_po_povm','sic_npovm','ai_cnovm','ai_ic_novm','ai_ic_povm','a_pc_povm_grid'];
+  const keys = ['1','2','3','4','5','6','7','8','9','0','-','=','q','w','e','r','t','y','u','i','o','p','[',']','\\','a'];
+  const sysKeys = ['sic_povm','sic_novm','sic_o_povm','sic_o_novm','ai_cpovm','a_pc_povm','s_pc_povm','am_pc_povm','ai_novm','ai_po_ovm','a_po_povm','s_po_povm','sic_npovm','ai_cnovm','ai_ic_novm','ai_ic_povm','a_pc_povm_grid','spc_novm','apc_novm','apc_povm_o','spc_novm_o','aic_povm_o','aic_novm_o','a_ic_povm_o','a_ic_novm_o','a_pc_novm_o','susy_ic_povm','susy_ic_novm','susy_pc_povm','susy_pc_novm','susy_ic_povm_o','susy_ic_novm_o','susy_pc_povm_o','susy_pc_novm_o'];
   const idx = keys.indexOf(e.key);
   if (idx >= 0) switchSystem(sysKeys[idx]);
   if (e.key === ' ') { e.preventDefault(); playing = !playing; 
