@@ -102,3 +102,60 @@ def winding(of=None, turns=None, angle=None, power=None):
     return {"winding":f"{num}/{den}","turns":t,"radians":t*2*math.pi,
             "complex":[c.real,c.imag],"denominator":den,"closes_after":den,
             "is_real":num==0 or (den==2 and num==1)}
+
+# Named reference tuples (grammar-anchor set, per module's own slot ordinals)
+REFS = {
+    "grammar": "𐑦𐑸𐑽𐑹𐑐𐑘𐑚𐑜⊙𐑫𐑕𐑭",
+    "clink":   "𐑦𐑸𐑽𐑹𐑐𐑘𐑚𐑜𐑣𐑫𐑕𐑭",
+    "aafa":    "𐑨𐑸𐑾𐑿𐑞𐑧𐑔𐑜⊙𐑒𐑙𐑷",
+    "psfoa":   "𐑦𐑶𐑑𐑗𐑱𐑺𐑲𐑝𐑢𐑓𐑙𐑷",
+}
+
+def tuple_algebra_main(args):
+    """CLI driver: dispatch on the alg_args dict assembled by cli.py run_algebra."""
+    lines = []
+    t = args.get("tuple")
+    if args.get("winding"):
+        r = winding(of=args.get("winding_of"), turns=args.get("turns"),
+                    angle=args.get("angle"), power=args.get("power"))
+        out = (f"winding {r['winding']}  turns {r['turns']}  "
+               f"radians {r['radians']:.6f}  closes_after {r['closes_after']}  "
+               f"is_real {r['is_real']}")
+        return json.dumps(r) if args.get("json") else out
+    if not t:
+        return ("usage: m3 algebra --tuple ⟨12 glyphs⟩ "
+                "[--report|--decode|--distance X|--meet X|--join X|--winding ...]")
+    try:
+        parsed = _parse(t)
+        if args.get("decode"):
+            for s in SLOTS:
+                lines.append(f"  {s}: {parsed[s]}")
+        if args.get("report"):
+            lines.append(f"tuple        {_clean(t)}")
+            lines.append(f"tier         {tier(t)}")
+            lines.append(f"consciousness {consciousness(t)}")
+            refs = (args.get("compare_with") or "grammar,clink,aafa,psfoa").split(",")
+            for ref in refs:
+                ref = ref.strip()
+                if ref in REFS:
+                    lines.append(f"distance to {ref:<10} {distance(t, REFS[ref]):.4f}")
+                else:
+                    try:
+                        lines.append(f"distance to {ref:<10} {distance(t, ref):.4f}")
+                    except ValueError:
+                        lines.append(f"distance to {ref:<10} (no reference tuple)")
+        if args.get("distance"):
+            ref = args["distance"]
+            if ref in REFS:
+                lines.append(f"distance to {ref}: {distance(t, REFS[ref]):.4f}")
+            else:
+                lines.append(f"distance to {ref}: {distance(t, ref):.4f}")
+        if args.get("meet"):
+            lines.append(f"meet: {meet(t, args['meet'])}")
+        if args.get("join"):
+            lines.append(f"join: {join(t, args['join'])}")
+        if not lines:
+            lines.append(_clean(t))
+        return "\n".join(lines)
+    except ValueError as e:
+        return f"ERROR: {e}"
