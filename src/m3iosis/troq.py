@@ -32,6 +32,7 @@ Author: Math⊙perator (Lando⊗⊙perator Team)
 import math
 from typing import Dict, List, Tuple, Optional, Union, Any
 from dataclasses import dataclass
+from m3iosis.tuple_algebra import TUPLE_GRAMMAR
 
 # ── Grammar tuple constant ────────────────────────────────────────
 TUPLE_TROQ = "𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑝⊙𐑖𐑕𐑭"
@@ -39,7 +40,6 @@ TUPLE_TRIPLE_FRAME = "𐑦𐑸𐑽𐑬𐑐𐑧𐑔𐑝⊙𐑖𐑕𐑭"
 TUPLE_RVNQ = "𐑼𐑰𐑑𐑬𐑐𐑧𐑔𐑠⊙𐑖𐑳𐑷"
 TUPLE_DRDA = "𐑼𐑸𐑾𐑹𐑞𐑧𐑔𐑠⊙𐑖𐑳𐑭"
 TUPLE_CLINK_L8 = "𐑦𐑸𐑾𐑹𐑐𐑧𐑔𐑵⊙𐑫𐑳𐑟"
-TUPLE_GRAMMAR = "𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑝⊙𐑖𐑙𐑭"
 
 # Primitive slot names in canonical order
 SLOT_NAMES = ["Ð", "Þ", "Ř", "Φ", "ƒ", "Ç", "Γ", "ɢ", "⊙", "Ħ", "Σ", "Ω"]

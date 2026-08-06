@@ -21,12 +21,12 @@ import json
 from typing import Dict, List, Tuple, Optional, Union, Any
 from dataclasses import dataclass
 import cmath
+from m3iosis.tuple_algebra import TUPLE_GRAMMAR
 
 # ── Grammar tuple constant ────────────────────────────────────────
 TUPLE_PF = "𐑦𐑥𐑑𐑹𐑐𐑤𐑔𐑝⊙𐑒𐑙𐑷"
 
 # Sibling system tuples for distance computation
-TUPLE_GRAMMAR = "𐑦𐑸𐑾𐑹𐑐𐑧𐑲𐑵⊙𐑫𐑳𐑟"
 TUPLE_TROQ = "𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑝⊙𐑖𐑕𐑭"
 TUPLE_HQE = "𐑦𐑡𐑾𐑿𐑐𐑧𐑲𐑜𐑢𐑓𐑳𐑷"
 TUPLE_DYSON = "𐑼𐑸𐑾𐑹𐑞𐑧𐑔𐑠⊙𐑖𐑳𐑭"

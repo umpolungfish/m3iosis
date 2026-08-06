@@ -23,13 +23,13 @@ from typing import Dict, List, Tuple, Optional, Union, Any
 from dataclasses import dataclass, field
 from enum import IntEnum
 import cmath
+from m3iosis.tuple_algebra import TUPLE_GRAMMAR
 
 # ── Grammar tuple constants ─────────────────────────────────────
 TUPLE_LCAA = "𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑝⊙𐑖𐑕𐑭"
 TUPLE_TROQ = "𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑝⊙𐑖𐑕𐑭"
 TUPLE_GOWERS = "𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑝⊙𐑖𐑕𐑭"
 TUPLE_CLINK_L8 = "𐑦𐑸𐑾𐑹𐑐𐑧𐑔𐑵⊙𐑫𐑳𐑟"
-TUPLE_GRAMMAR = "𐑦𐑸𐑽𐑹𐑐𐑧𐑔𐑝⊙𐑖𐑙𐑭"
 TUPLE_AXION_QCD = "𐑼𐑡𐑽𐑬𐑐𐑧𐑲𐑠⊙𐑓𐑙𐑷"
 
 SLOT_NAMES = ["Ð", "Þ", "Ř", "Φ", "ƒ", "Ç", "Γ", "ɢ", "⊙", "Ħ", "Σ", "Ω"]

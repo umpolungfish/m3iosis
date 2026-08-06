@@ -103,9 +103,23 @@ def winding(of=None, turns=None, angle=None, power=None):
             "complex":[c.real,c.imag],"denominator":den,"closes_after":den,
             "is_real":num==0 or (den==2 and num==1)}
 
+def _load_canonical_grammar_tuple() -> str:
+    """There is one Grammar. Read it from the catalog, never hand-type it."""
+    catalog_path = "/home/mrnob0dy666/imsgct/imscribing_grammar/IG_catalog.json"
+    with open(catalog_path, encoding="utf-8") as f:
+        catalog = json.load(f)
+    entries = catalog if isinstance(catalog, list) else list(catalog.values())
+    axes = ["⊢","⊣",">","<","⋈","⊤","∈","∋","⊙","⊥","⊞","◻"]
+    for e in entries:
+        if isinstance(e, dict) and e.get("name") == "universal_imscriptive_grammar":
+            return "".join(e[a] for a in axes)
+    raise RuntimeError("universal_imscriptive_grammar not found in catalog")
+
+TUPLE_GRAMMAR = _load_canonical_grammar_tuple()
+
 # Named reference tuples (grammar-anchor set, per module's own slot ordinals)
 REFS = {
-    "grammar": "𐑦𐑸𐑽𐑹𐑐𐑘𐑚𐑜⊙𐑫𐑕𐑭",
+    "grammar": TUPLE_GRAMMAR,
     "clink":   "𐑦𐑸𐑽𐑹𐑐𐑘𐑚𐑜𐑣𐑫𐑕𐑭",
     "aafa":    "𐑨𐑸𐑾𐑿𐑞𐑧𐑔𐑜⊙𐑒𐑙𐑷",
     "psfoa":   "𐑦𐑶𐑑𐑗𐑱𐑺𐑲𐑝𐑢𐑓𐑙𐑷",
