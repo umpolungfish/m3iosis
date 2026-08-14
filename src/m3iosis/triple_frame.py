@@ -36,8 +36,8 @@ class Opcode(Enum):
     ENGAGR  = "⊞"   # non-commutative braiding / paradox
     FFUSE   = "●"   # multiplication (μ)
     CLINK   = "="   # superoperator composition
-    AFWD    = ">"   # unitary evolution
-    AREV    = "<"   # adjoint symmetry
+    AFWD    = "≻"   # unitary evolution
+    AREV    = "≺"   # adjoint symmetry
     IFIX    = "¬"   # trace record
     TANCH   = "⊣"   # holographic boundary closure
 

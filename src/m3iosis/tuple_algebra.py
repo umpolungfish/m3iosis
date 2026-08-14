@@ -109,7 +109,7 @@ def _load_canonical_grammar_tuple() -> str:
     with open(catalog_path, encoding="utf-8") as f:
         catalog = json.load(f)
     entries = catalog if isinstance(catalog, list) else list(catalog.values())
-    axes = ["⊢","⊣",">","<","⋈","⊤","∈","∋","⊙","⊥","⊞","◻"]
+    axes = ["⊢","⊣","≻","≺","⋈","⊤","∈","∋","⊙","⊥","⊞","◻"]
     for e in entries:
         if isinstance(e, dict) and e.get("name") == "universal_imscriptive_grammar":
             return "".join(e[a] for a in axes)

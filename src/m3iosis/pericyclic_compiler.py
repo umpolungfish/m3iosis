@@ -98,7 +98,7 @@ class Cobordism:
 # ── IMASM Protocol Word ────────────────────────────────────────
 
 IMASM_OPCODES = {
-    "VINIT": "⊢", "TANCH": "◇", "AFWD": ">", "AREV": "<",
+    "VINIT": "⊢", "TANCH": "◇", "AFWD": "≻", "AREV": "≺",
     "CLINK": "●", "IMSCRIB": "⊙", "FSPLIT": "+", "FFUSE": "×",
     "EVALT": "⊞", "EVALF": "⊟", "ENGAGR": "⊗", "IFIX": "¬",
 }
@@ -329,7 +329,7 @@ class PericyclicCompiler:
         
         The Frobenius condition μ∘δ=id means this protocol closes (returns to start).
         """
-        word = ["⊙", ">", "+", "×", "¬"]  # IMSCRIB → AFWD → FSPLIT → FFUSE → IFIX
+        word = ["⊙", "≻", "+", "×", "¬"]  # IMSCRIB → AFWD → FSPLIT → FFUSE → IFIX
         ops = [REVERSE_IMASM[g] for g in word]
         
         return {
