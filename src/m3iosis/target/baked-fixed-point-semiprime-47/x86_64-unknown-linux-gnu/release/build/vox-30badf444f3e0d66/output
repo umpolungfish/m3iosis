@@ -1,0 +1,6 @@
+cargo:rerun-if-changed=build.rs
+cargo:rerun-if-env-changed=VOX_BAKED_INPUT_FILE
+cargo:rerun-if-changed=/home/mrnob0dy666/imsgct/Vox/tests/baked/fixed_point_semiprime_47.word
+cargo:rerun-if-env-changed=VOX_PHASE_MODULUS_WORD
+cargo:rerun-if-env-changed=VOX_PHASE_BASE_WORD
+cargo:rerun-if-env-changed=VOX_PHASE_WIDTH_WORD

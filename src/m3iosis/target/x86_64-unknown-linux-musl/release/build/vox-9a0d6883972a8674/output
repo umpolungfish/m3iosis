@@ -1,0 +1,6 @@
+cargo:rerun-if-changed=build.rs
+cargo:rerun-if-env-changed=VOX_BAKED_INPUT_FILE
+cargo:rerun-if-changed=/home/mrnob0dy666/imsgct/Vox/membranes/hsoa/1790002892019305146/175bit-q4-b626e1b597ec98d5eec3222094f0f601a5127e62e3cffc1a1b3fbae2d9f11b22/inputs.imasm
+cargo:rerun-if-env-changed=VOX_PHASE_MODULUS_WORD
+cargo:rerun-if-env-changed=VOX_PHASE_BASE_WORD
+cargo:rerun-if-env-changed=VOX_PHASE_WIDTH_WORD
