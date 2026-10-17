@@ -18,5 +18,5 @@ CIRCUIT_LEVELS="$circuit_levels" CARGO_TARGET_DIR=target/membranes-musl \
 circuit_directory="membranes/qft_circuit/$((1 << circuit_levels))"
 mkdir -p "$circuit_directory"
 cp target/membranes-musl/x86_64-unknown-linux-musl/release/qft_circuit "$circuit_directory/payload.elf"
-./target/release/vox imasm "$circuit_directory/payload.elf" > /dev/null
-./target/release/vox circuit "$circuit_directory/payload.elf.imasm" "$@" | tee "$circuit_directory/resident.log"
+./target/x86_64-unknown-linux-gnu/release/vox imasm "$circuit_directory/payload.elf" > /dev/null
+./target/x86_64-unknown-linux-gnu/release/vox circuit "$circuit_directory/payload.elf.imasm" "$@" | tee "$circuit_directory/resident.log"

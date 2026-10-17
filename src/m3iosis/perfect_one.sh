@@ -6,8 +6,8 @@ set -euo pipefail
 [ $# -ge 1 ] || { echo "usage: $0 <decimal value> [depth]" >&2; exit 1; }
 cd "$(dirname "$0")"
 cargo build --release --bin vox >/dev/null 2>&1
-WORD="$(./target/release/vox numeral "$1")"
+WORD="$(./target/x86_64-unknown-linux-gnu/release/vox numeral "$1")"
 DEPTH="${2:-2}"
 touch src/bin/perfect_one.rs
 PERFECT_N_WORD="$WORD" PERFECT_DEPTH="$DEPTH" cargo build --release --bin perfect_one >/dev/null 2>&1
-exec ./target/release/perfect_one
+exec ./target/x86_64-unknown-linux-gnu/release/perfect_one

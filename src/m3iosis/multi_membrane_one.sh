@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 N="${1:?usage: $0 <decimal N> [a] [qubits]}"
 a="${2:-2}"; q="${3:-13}"
 cargo build --release --bin vox >/dev/null 2>&1
-WORD="$(./target/release/vox numeral "$a") $(./target/release/vox numeral "$N") $(./target/release/vox numeral "$q")"
+WORD="$(./target/x86_64-unknown-linux-gnu/release/vox numeral "$a") $(./target/x86_64-unknown-linux-gnu/release/vox numeral "$N") $(./target/x86_64-unknown-linux-gnu/release/vox numeral "$q")"
 touch src/bin/multi_quantum_membrane.rs
 MEMBRANE_WORDS="$WORD" cargo build --release --bin multi_quantum_membrane
-exec ./target/release/multi_quantum_membrane
+exec ./target/x86_64-unknown-linux-gnu/release/multi_quantum_membrane

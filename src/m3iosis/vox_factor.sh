@@ -6,4 +6,4 @@ set -euo pipefail
 cd "$(dirname "$0")"
 read -r A N Q < membrane_words.imasm
 echo "membrane baked: a=${#A} N=${#N} q=${#Q} marks"
-exec ./target/release/vox morphism-factor "$N"
+exec ./target/x86_64-unknown-linux-gnu/release/vox morphism-factor "$N"

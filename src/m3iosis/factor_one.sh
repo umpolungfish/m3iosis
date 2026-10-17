@@ -9,8 +9,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 # Ensure vox (the encoder) is built.
 cargo build --release --bin vox >/dev/null 2>&1
-WORD="$(./target/release/vox numeral "$1")"
+WORD="$(./target/x86_64-unknown-linux-gnu/release/vox numeral "$1")"
 # FORCE a rebuild of just this bin so the new numeral is compiled in.
 touch src/bin/factor_one.rs
 FACTOR_N_WORD="$WORD" cargo build --release --bin factor_one >/dev/null 2>&1
-exec ./target/release/factor_one
+exec ./target/x86_64-unknown-linux-gnu/release/factor_one

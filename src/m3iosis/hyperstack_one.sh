@@ -9,12 +9,12 @@ cd "$(dirname "$0")"
 cargo build --release --bin vox >/dev/null 2>&1
 N="$1"; shift
 TYPES="${*:-phase shor fib}"
-WORD="$(./target/release/vox numeral "$N")"
+WORD="$(./target/x86_64-unknown-linux-gnu/release/vox numeral "$N")"
 touch src/bin/hyperstack_one.rs
 FACTOR_N_WORD="$WORD" HYPERSTACK_TYPES="$TYPES" cargo build --release --bin hyperstack_one >/dev/null 2>&1
 mkdir -p membranes
 SLUG="$(printf '%s' "$TYPES" | tr ' ' '-')"
 OUT="membranes/factor_${N}_${SLUG}"
-cp -f ./target/release/hyperstack_one "$OUT"
+cp -f ./target/x86_64-unknown-linux-gnu/release/hyperstack_one "$OUT"
 echo "emitted baked membrane: $OUT"
 echo "  N=$N through [$TYPES]; run it with: $(dirname "$0")/$OUT"

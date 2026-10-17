@@ -17,14 +17,14 @@ for glyph_spec in \
     # Create-new CLI output prevents replacement of an existing word. On a
     # repeat invocation, verify the existing artifact rather than overwriting it.
     if ! test -e "$glyph_dest.glyphs"; then
-        ./target/release/vox glyphs "$glyph_source/payload.elf.imasm" "$glyph_dest.glyphs"
+        ./target/x86_64-unknown-linux-gnu/release/vox glyphs "$glyph_source/payload.elf.imasm" "$glyph_dest.glyphs"
     fi
     if ! test -e "$glyph_dest.recovered.imasm"; then
-        ./target/release/vox unglyphs "$glyph_dest.glyphs" "$glyph_dest.recovered.imasm"
+        ./target/x86_64-unknown-linux-gnu/release/vox unglyphs "$glyph_dest.glyphs" "$glyph_dest.recovered.imasm"
     fi
     cmp "$glyph_source/payload.elf.imasm" "$glyph_dest.recovered.imasm"
     /usr/bin/time -o "$glyph_dest.time" -f '%e seconds elapsed' \
-        ./target/release/vox run "$glyph_dest.glyphs" > "$glyph_dest.stdout" 2> "$glyph_dest.stderr"
+        ./target/x86_64-unknown-linux-gnu/release/vox run "$glyph_dest.glyphs" > "$glyph_dest.stdout" 2> "$glyph_dest.stderr"
     rg -q '^entry\(\.\.\.\) exited\(0\)' "$glyph_dest.stdout"
     diff -u "$glyph_source/native.stdout" <(sed '/^entry(\.\.\.) exited(0) /d' "$glyph_dest.stdout")
     diff -u "$glyph_source/native.stderr" "$glyph_dest.stderr"
