@@ -37,6 +37,41 @@
 extern crate alloc;
 #[path = "../phase_unbraid.rs"] mod phase_unbraid;
 
+mod native_numeral {
+    use num_bigint::BigUint;
+    use vox::morphism_factor::{cmp, decimal_to_tape, dec_of, emit_numeral, mul, parse_numeral};
+
+    pub fn decode(value: &str) -> Option<BigUint> {
+        let tape = parse_numeral(value).ok()?;
+        BigUint::parse_bytes(dec_of(&tape).as_bytes(), 10)
+    }
+
+    pub fn encode(value: &str) -> String {
+        let tape = decimal_to_tape(value).or_else(|| parse_numeral(value).ok())
+            .expect("decimal or IMASM numeral");
+        emit_numeral(&tape)
+    }
+
+    pub fn multiply_via_word(p: &BigUint, q: &BigUint) -> BigUint {
+        let p = decimal_to_tape(&p.to_str_radix(10)).expect("positive factor");
+        let q = decimal_to_tape(&q.to_str_radix(10)).expect("positive factor");
+        BigUint::parse_bytes(dec_of(&mul(&p, &q)).as_bytes(), 10).expect("product numeral")
+    }
+
+    pub fn syzygy_preserves(source: &BigUint, p: &BigUint, q: &BigUint) -> bool {
+        let Some(source) = decimal_to_tape(&source.to_str_radix(10)) else { return false };
+        let Some(p) = decimal_to_tape(&p.to_str_radix(10)) else { return false };
+        let Some(q) = decimal_to_tape(&q.to_str_radix(10)) else { return false };
+        cmp(&mul(&p, &q), &source).is_eq()
+    }
+
+    pub fn factor_words_line(p: &BigUint, q: &BigUint) -> String {
+        let p = decimal_to_tape(&p.to_str_radix(10)).expect("positive factor");
+        let q = decimal_to_tape(&q.to_str_radix(10)).expect("positive factor");
+        format!("p_word {}\nq_word {}\n", emit_numeral(&p), emit_numeral(&q))
+    }
+}
+
 fn main() {
     let result = (|| -> Result<String, String> {
         let raw = option_env!("MEMBRANE_WORDS")

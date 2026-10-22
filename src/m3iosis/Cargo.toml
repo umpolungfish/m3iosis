@@ -1,0 +1,14 @@
+[package]
+name = "m3iosis-vox"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[lib]
+name = "m3iosis_vox"
+path = "src/lib.rs"
+
+[dependencies]
+vox = { path = "../../../Vox" }
+num-bigint = "0.4"
+libm = "0.2"
