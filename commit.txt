@@ -1,1 +1,1 @@
-I keep my generated large tape local and push my braid tools as source.
+I exclude generated nested executable tapes from my published source.
