@@ -1,1 +1,3 @@
-I exclude generated nested executable tapes from my published source.
+I apply selected synthesis words to my carried circuit state.
+
+I keep internal reference calculations canonical, report the actual selected operator error, and recover the initial state through its physical inverse.

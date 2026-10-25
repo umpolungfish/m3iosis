@@ -274,12 +274,12 @@ class FibonacciQuantumComputer:
                 results.append((n, d, int(math.log2(d))))
         return results
 
-    def synthesize_gate(self, n: int, word: list):
+    def synthesize_gate(self, n: int, word: list, ordering='canonical'):
         """Synthesize a quantum gate from a braid word on n anyons.
 
         Returns the unitary matrix on log2(dim V_n) qubits.
         """
-        U = self.algebra.braid_word(n, word)
+        U = self.algebra.braid_word(n, word, ordering=ordering)
         d = U.shape[0]
         if d == 0:
             raise ValueError(f"Fusion space V_{n} is trivial")

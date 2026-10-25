@@ -194,6 +194,8 @@ def main():
                             help="Show available qubit encodings")
     qc_parser.add_argument("--depth", type=int, default=5,
                             help="Maximum braid word depth")
+    qc_parser.add_argument('--net-depth', type=int, default=15, help='Synthesis net depth')
+    qc_parser.add_argument('--sk-depth', type=int, default=3, help='Residual synthesis depth')
     def run_qc(args):
         # Re-parse args for the quantum computer CLI
         import sys as _sys

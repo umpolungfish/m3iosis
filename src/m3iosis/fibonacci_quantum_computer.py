@@ -228,7 +228,7 @@ class FibonacciGateSet:
         return float(np.sqrt(max(0.0, 1.0 - overlap)))
 
     def approximate_gate(self, target, max_depth=6, tolerance=1e-2,
-                         sk_depth=3, net_depth=15):
+                         sk_depth=3, net_depth=15, ordering='canonical'):
         """Approximate a target single-qubit gate using braid words.
 
         Runs Solovay-Kitaev over a deduplicated gate net, scoring by the
@@ -247,16 +247,29 @@ class FibonacciGateSet:
         if self._net is None:
             self._net = self._build_gate_net(max_depth=net_depth)
         if sk_depth > 0:
-            return self._sk_split_fuse(target, sk_depth, net_depth, self._net)
-        return self.solovay_kitaev(target, depth=sk_depth, _cache=self._net)
+            word, _, _ = self._sk_split_fuse(target, sk_depth, net_depth, self._net)
+        else:
+            word, _, _ = self.solovay_kitaev(target, depth=sk_depth, _cache=self._net)
+        from m3iosis.positional_order import selected_braid
+        physical_word = selected_braid(word, ordering)
+        inverse_word = [-g for g in reversed(physical_word)]
+        gate = self.qc.synthesize_gate(4, physical_word, ordering='canonical')
+        inverse_gate = self.qc.synthesize_gate(4, inverse_word, ordering='canonical')
+        residual = max(float(np.max(np.abs(returned - np.eye(2))))
+                       for returned in (inverse_gate @ gate, gate @ inverse_gate))
+        if not np.isfinite(residual) or residual > 1e-9:
+            raise ValueError(f"Synthesized braid failed its actual inverse return: {residual}")
+        self.last_order_return = dict(physical_word=physical_word, inverse_word=inverse_word,
+                                      inverse_return_residual=residual, inverse_gate=inverse_gate)
+        return physical_word, gate, self.projective_distance(target, gate)
 
-    def approximate_hadamard(self, max_depth=6):
+    def approximate_hadamard(self, max_depth=6, **options):
         """Approximate the Hadamard gate using Fibonacci braids."""
-        return self.approximate_gate(self.HADAMARD, max_depth=max_depth)
+        return self.approximate_gate(self.HADAMARD, max_depth=max_depth, **options)
 
-    def approximate_t_gate(self, max_depth=6):
+    def approximate_t_gate(self, max_depth=6, **options):
         """Approximate the T gate using Fibonacci braids."""
-        return self.approximate_gate(self.T_GATE, max_depth=max_depth)
+        return self.approximate_gate(self.T_GATE, max_depth=max_depth, **options)
 
     def gate_distance(self, U, V):
         """Phase-invariant distance between two unitaries.
@@ -603,7 +616,7 @@ class FibonacciQuantumCircuit:
 
     IDEAL = None   # set below, after FibonacciGateSet is defined
 
-    def compile_composite(self, names, sk_depth=3):
+    def compile_composite(self, names, sk_depth=3, net_depth=15, ordering=None):
         """Compile a whole circuit as ONE unitary rather than gate by gate.
 
         Per-gate compilation composes independent approximations, so the errors
@@ -620,8 +633,18 @@ class FibonacciQuantumCircuit:
         target = np.eye(2, dtype=complex)
         for nm in names:                      # left-to-right application
             target = table[nm] @ target
-        word, gate, err = gs.approximate_gate(target, sk_depth=sk_depth)
+        word, gate, err = gs.approximate_gate(target, sk_depth=sk_depth,
+                                               net_depth=net_depth, ordering=ordering)
+        initial_state = self.state.state.copy()
         self.state.apply_gate(gate)
+        returned = gs.last_order_return['inverse_gate'] @ self.state.state
+        state_residual = float(np.max(np.abs(returned-initial_state)))
+        if not np.isfinite(state_residual) or state_residual > 1e-9:
+            raise ValueError(f"Selected circuit failed carried-state inverse return: {state_residual}")
+        self.last_order_return = {key:value for key,value in gs.last_order_return.items()
+                                  if key != 'inverse_gate'}
+        self.last_order_return.update(initial_state=initial_state, recovered_state=returned,
+                                      state_return_residual=state_residual)
         self.braid_history.append(("+".join(names), word, err))
         self.gate_history.extend(names)
         return word, gate, err, target
@@ -704,6 +727,7 @@ class FibonacciQuantumCircuit:
             "full_braid_word": self.get_braid_decomposition(),
             "final_state": self.state.state,
             "probabilities": self.state.get_probabilities(),
+            "order_return": getattr(self, 'last_order_return', None),
         }
 
 
@@ -977,6 +1001,8 @@ def verify_quantum_computer():
 def quantum_computer_cli():
     """CLI entry point for the Fibonacci quantum computer."""
     import argparse
+    from m3iosis.positional_order import intercept
+    intercept()
 
     parser = argparse.ArgumentParser(
         description="Fibonacci Quantum Computer — braid-based quantum computation",
@@ -1005,6 +1031,9 @@ Examples:
                         help="Show available qubit encodings")
     parser.add_argument("--depth", type=int, default=5,
                         help="Maximum braid word depth for approximation")
+    parser.add_argument('--net-depth', type=int, default=15, help='Synthesis net depth')
+    parser.add_argument('--sk-depth', type=int, default=3, help='Residual synthesis depth')
+    parser.epilog += '\n  --ordering canonical|reverse|perm:i,j,...|all [--order-limit K]'
 
     args = parser.parse_args()
 
@@ -1029,10 +1058,12 @@ Examples:
 
     if args.approx_h:
         gs = FibonacciGateSet()
-        word, gate, err = gs.approximate_hadamard(max_depth=args.depth)
+        word, gate, err = gs.approximate_hadamard(max_depth=args.depth, net_depth=args.net_depth,
+                                                  sk_depth=args.sk_depth, ordering=None)
         print(f"Hadamard approximation (depth {args.depth}):")
         print(f"  Braid word: {word}")
-        print(f"  Error (Frobenius): {err:.6f}")
+        print(f"  Error (projective): {err:.6f}")
+        print(f"  Inverse return: { {k:v for k,v in gs.last_order_return.items() if k != 'inverse_gate'} }")
         print(f"  Unitary: {np.allclose(gate @ gate.conj().T, np.eye(2))}")
         print(f"  Gate matrix:")
         print(f"  {gate[0,0]:.6f}  {gate[0,1]:.6f}")
@@ -1041,10 +1072,12 @@ Examples:
 
     if args.approx_t:
         gs = FibonacciGateSet()
-        word, gate, err = gs.approximate_t_gate(max_depth=args.depth)
+        word, gate, err = gs.approximate_t_gate(max_depth=args.depth, net_depth=args.net_depth,
+                                               sk_depth=args.sk_depth, ordering=None)
         print(f"T gate approximation (depth {args.depth}):")
         print(f"  Braid word: {word}")
-        print(f"  Error (Frobenius): {err:.6f}")
+        print(f"  Error (projective): {err:.6f}")
+        print(f"  Inverse return: { {k:v for k,v in gs.last_order_return.items() if k != 'inverse_gate'} }")
         print(f"  Unitary: {np.allclose(gate @ gate.conj().T, np.eye(2))}")
         print(f"  Gate matrix:")
         print(f"  {gate[0,0]:.6f}  {gate[0,1]:.6f}")
@@ -1053,7 +1086,8 @@ Examples:
 
     if args.circuit:
         circ = FibonacciQuantumCircuit(1)
-        word, gate, err, target = circ.compile_composite(list(args.circuit))
+        word, gate, err, target = circ.compile_composite(list(args.circuit),
+                                                        sk_depth=args.sk_depth, net_depth=args.net_depth)
         ok, resid, det_pred = FibonacciQuantumCircuit.braid_word_check(
             circ.gate_set.qc, word, gate)
         print(f"  word check: {'PASS' if ok else 'FAIL'}  "
@@ -1081,6 +1115,7 @@ Examples:
         print(f"  Total error: {report['total_error']:.6f}")
         print(f"  Full braid word: {report['full_braid_word']}")
         print(f"  Final state: {report['final_state']}")
+        print(f"  Inverse return: {report['order_return']}")
         print(f"  Probabilities: {report['probabilities']}")
         return
 
