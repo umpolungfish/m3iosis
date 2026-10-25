@@ -13,7 +13,7 @@ from m3iosis.fibonacci_anyon_tool import FibonacciBraidSimulator
 from m3iosis.fibonacci_anyon_algebra import fusion_space_dimension
 
 
-def simulate_braid(word, num_strands=3):
+def simulate_braid(word, num_strands=3, ordering=None):
     """Evaluate a braid word and compute the resulting anyon state.
 
     Evaluates an Artin braid word on the fusion space V_n = Hom(tau^n, 1)
@@ -39,7 +39,8 @@ def simulate_braid(word, num_strands=3):
     
     # evaluate_braid_word takes (n, word) — strand count FIRST;
     # the simulator method takes (word, num_strands).
-    unitary_op = sim.evaluate_braid_word(word, num_strands)
+    stats = sim.braid_statistics(num_strands, word, ordering=ordering)
+    unitary_op = stats['unitary']
     d = unitary_op.shape[0]
     
     # Start in the first basis state.
@@ -47,10 +48,15 @@ def simulate_braid(word, num_strands=3):
     initial_state[0] = 1.0
     
     final_state = unitary_op @ initial_state
+    inverse_op = sim.evaluate_braid_word(stats['inverse_word'], num_strands, ordering='canonical')
+    recovered_state = inverse_op @ final_state
+    recovery_residual = float(np.max(np.abs(recovered_state - initial_state)))
     probs = [abs(amp)**2 for amp in final_state]
     
     print(f"  Unitary dimension: {d} x {d}")
     print(f"  Final state vector: {final_state}")
+    print(f"  Physical word: {stats['physical_word']}; inverse: {stats['inverse_word']}")
+    print(f"  inverse_return_residual={recovery_residual:.17e} return_verified={recovery_residual < 1e-9}")
     print(f"  Outcome probabilities:")
     for i, p in enumerate(probs):
         print(f"    |state_{i}> : {p:.6f}")
@@ -61,6 +67,8 @@ def simulate_braid(word, num_strands=3):
         'probabilities': probs,
         'dimension': d
     }
+    result.update(physical_word=stats['physical_word'], inverse_word=stats['inverse_word'],
+                  recovered_state=recovered_state, inverse_return_residual=recovery_residual)
     
     # Map fusion channels when basis is large enough.
     if d >= 2:
@@ -74,6 +82,8 @@ def simulate_braid(word, num_strands=3):
 
 def main():
     import argparse
+    from m3iosis.positional_order import intercept
+    intercept()
     parser = argparse.ArgumentParser(
         description="Fibonacci braid simulation — evaluate braid words on anyon fusion spaces")
     parser.add_argument("word", type=int, nargs="+",

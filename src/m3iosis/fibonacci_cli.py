@@ -22,6 +22,8 @@ from m3iosis.fibonacci_anyon_algebra import (
 
 
 def main():
+    from m3iosis.positional_order import intercept
+    intercept()
     parser = argparse.ArgumentParser(
         description="Fibonacci Anyon CLI Tool (expanded operational tools)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -61,6 +63,7 @@ Examples:
     parser.add_argument("--word", type=int, nargs="+", default=[1, 2, 1],
                         help="Braid word (default: [1, 2, 1])")
 
+    parser.epilog += '\n  --ordering canonical|reverse|perm:i,j,...|all [--order-limit K]'
     args = parser.parse_args()
 
     if args.diag:
@@ -87,6 +90,8 @@ Examples:
         print(f"  dim V_{n} = {stats['dimension']}")
         print(f"  Unitary: {stats['is_unitary']}")
         print(f"  Trace: {stats['trace']:.6f}")
+        print(f"  Physical word: {stats['physical_word']}; inverse: {stats['inverse_word']}")
+        print(f"  inverse_return_residual={stats['inverse_return_residual']:.17e} return_verified={stats['return_verified']}")
         print(f"  Eigenvalues: {', '.join(f'{e:.4f}' for e in stats['eigenvalues'])}")
         return
 
@@ -97,6 +102,7 @@ Examples:
         val = qec.jones_polynomial(n, word)
         print(f"Jones polynomial (normalized) for braid {word} on {n} strands:")
         print(f"  V = {val:.6f}")
+        print(f"  Inverse return: {qec.last_braid_return}")
         return
 
     if args.gate_info:
@@ -136,6 +142,8 @@ Examples:
         print(f"  dim V_{args.strands} = {stats['dimension']}")
         print(f"  Unitary: {stats['is_unitary']}")
         print(f"  Trace: {stats['trace']:.6f}")
+        print(f"  Physical word: {stats['physical_word']}; inverse: {stats['inverse_word']}")
+        print(f"  inverse_return_residual={stats['inverse_return_residual']:.17e} return_verified={stats['return_verified']}")
         print(f"  Eigenvalues: {', '.join(f'{e:.4f}' for e in stats['eigenvalues'])}")
         print("Simulation complete. Algebra: Consistent.")
         return

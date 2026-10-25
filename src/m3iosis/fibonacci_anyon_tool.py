@@ -138,9 +138,9 @@ class FibonacciAnyonAlgebra:
         states, sigmas = fibonacci_braid_representation(n)
         return sigmas[k - 1]
 
-    def braid_word(self, n, word):
+    def braid_word(self, n, word, ordering=None):
         """Evaluate a braid word (list of signed ints) to a unitary on V_n."""
-        return evaluate_braid_word(n, word)
+        return evaluate_braid_word(n, word, ordering=ordering)
 
     def braid_to_quantum_gate(self, n, word, target_qubit=0):
         """Synthesize a quantum gate from a braid word.
@@ -199,11 +199,11 @@ class FibonacciBraidSimulator:
             )
         return sigmas[strand_idx - 1]
 
-    def evaluate_braid_word(self, word: list, num_strands: int):
+    def evaluate_braid_word(self, word: list, num_strands: int, ordering=None):
         """
         Multiply the fully embedded braid operators defined by the word.
         """
-        return evaluate_braid_word(num_strands, word)
+        return evaluate_braid_word(num_strands, word, ordering=ordering)
 
     def get_fusion_probabilities(self, state: np.ndarray):
         """
@@ -213,7 +213,7 @@ class FibonacciBraidSimulator:
         probs = np.abs(state)**2
         return {"vacuum": float(probs[0]), "tau": float(probs[1])}
 
-    def braid_statistics(self, n: int, word: list):
+    def braid_statistics(self, n: int, word: list, ordering=None):
         """Compute topological statistics of a braid word.
 
         Returns a dict with:
@@ -222,8 +222,14 @@ class FibonacciBraidSimulator:
           - trace: quantum trace (related to Jones polynomial at root of unity)
           - dimension: dim V_n
         """
-        U = self.evaluate_braid_word(word, n)
+        from m3iosis.positional_order import selected_braid
+        physical_word = selected_braid(word, ordering)
+        inverse_word = [-g for g in reversed(physical_word)]
+        U = self.evaluate_braid_word(physical_word, n, ordering='canonical')
+        inverse = self.evaluate_braid_word(inverse_word, n, ordering='canonical')
         d = U.shape[0]
+        residual = max(float(np.max(np.abs(returned - np.eye(d)), initial=0.0))
+                       for returned in (inverse @ U, U @ inverse))
         eigs = np.linalg.eigvals(U)
         return {
             "unitary": U,
@@ -231,6 +237,10 @@ class FibonacciBraidSimulator:
             "trace": complex(np.trace(U)),
             "dimension": d,
             "is_unitary": np.allclose(U @ U.conj().T, np.eye(d), atol=1e-9),
+            "physical_word": physical_word,
+            "inverse_word": inverse_word,
+            "inverse_return_residual": residual,
+            "return_verified": residual < 1e-9,
         }
 
     def run_diagnostic(self):
@@ -347,7 +357,7 @@ class FibonacciQuantumComputer:
         t2 = np.trace(self._apply_word(s2, word, s2[0].shape[0])) if s2 else 0.0
         return complex(t1 + PHI * t2)
 
-    def jones_polynomial(self, n: int, word: list, root_of_unity=None):
+    def jones_polynomial(self, n: int, word: list, root_of_unity=None, ordering=None):
         """Jones polynomial of the braid closure, evaluated at t = e^{2 pi i/5}.
 
         This is the evaluation Fibonacci anyons perform natively: SU(2) level 3
@@ -378,7 +388,23 @@ class FibonacciQuantumComputer:
                 "Fibonacci anyons evaluate the Jones polynomial at the fifth "
                 "root of unity only; other roots need a different anyon model."
             )
+        from m3iosis.positional_order import selected_braid
+        word = selected_braid(word, ordering)
         self.validate_braid_word(n, word)
+        inverse_word = [-g for g in reversed(word)]
+        residual = 0.0
+        for sigmas in self._sector_reps(n):
+            if not sigmas:
+                continue
+            dimension = sigmas[0].shape[0]
+            forward = self._apply_word(sigmas, word, dimension)
+            backward = self._apply_word(sigmas, inverse_word, dimension)
+            residual = max(residual, *(float(np.max(np.abs(returned - np.eye(dimension))))
+                                       for returned in (backward @ forward, forward @ backward)))
+        self.last_braid_return = dict(physical_word=word, inverse_word=inverse_word,
+                                      inverse_return_residual=residual)
+        if not np.isfinite(residual) or residual > 1e-9:
+            raise ValueError(f"Selected Jones braid failed inverse return: {residual}")
         word = [-g for g in word]
         alpha = cmath.exp(-1j * math.pi / 5)
         beta = -PHI
@@ -503,6 +529,8 @@ def fibonacci_tool_main():
     """CLI entry point for Fibonacci anyon operational tools."""
     import argparse
     import sys
+    from m3iosis.positional_order import intercept
+    intercept()
 
     parser = argparse.ArgumentParser(
         description="Fibonacci Anyon Algebra Operational Tools",
@@ -536,6 +564,7 @@ Examples:
     parser.add_argument("--summary", action="store_true",
                         help="Full self-consistency summary")
 
+    parser.epilog += '\n  --ordering canonical|reverse|perm:i,j,...|all [--order-limit K]'
     args = parser.parse_args()
 
     if args.diag:
@@ -562,6 +591,8 @@ Examples:
         print(f"  dim V_{n} = {stats['dimension']}")
         print(f"  Unitary: {stats['is_unitary']}")
         print(f"  Trace: {stats['trace']:.6f}")
+        print(f"  Physical word: {stats['physical_word']}; inverse: {stats['inverse_word']}")
+        print(f"  inverse_return_residual={stats['inverse_return_residual']:.17e} return_verified={stats['return_verified']}")
         print(f"  Eigenvalues: {', '.join(f'{e:.4f}' for e in stats['eigenvalues'])}")
         return
 
@@ -587,6 +618,7 @@ Examples:
         val = qec.jones_polynomial(n, word)
         print(f"Jones polynomial (normalized) for braid {word} on {n} strands:")
         print(f"  V = {val:.6f}")
+        print(f"  Inverse return: {qec.last_braid_return}")
         return
 
     if args.dimension:

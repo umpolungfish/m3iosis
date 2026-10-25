@@ -386,7 +386,7 @@ def fibonacci_braid_representation(n):
         sigmas.append(M)
     return states, sigmas
 
-def evaluate_braid_word(n, word):
+def evaluate_braid_word(n, word, ordering='canonical'):
     """Evaluate an Artin braid word to a unitary on the fusion space V_n.
 
     ``word`` is a list of signed integers: ``+k`` means sigma_k, ``-k`` means
@@ -409,6 +409,8 @@ def evaluate_braid_word(n, word):
             "simulator method of the same name takes (word, num_strands); "
             "these arguments look swapped."
         )
+    from m3iosis.positional_order import selected_braid
+    word = selected_braid(word, ordering)
     states, sigmas = fibonacci_braid_representation(n)
     d = len(states)
     U = np.eye(d, dtype=complex)

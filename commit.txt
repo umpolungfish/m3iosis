@@ -1,0 +1,3 @@
+I expose braid order choices in my Fibonacci tools.
+
+I carry the physical word into matrix and state execution and return through its actual inverse using the shared workspace ordering implementation.

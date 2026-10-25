@@ -105,10 +105,11 @@ def winding(of=None, turns=None, angle=None, power=None):
 
 def _load_canonical_grammar_tuple() -> str:
     """There is one Grammar. Read it from the catalog, never hand-type it."""
-    catalog_path = "/home/mrnob0dy666/imsgct/imscribing_grammar/IG_catalog.json"
+    from pathlib import Path
+    catalog_path = Path.home() / '.imscrbgrmr' / 'catalog.json'
     with open(catalog_path, encoding="utf-8") as f:
         catalog = json.load(f)
-    entries = catalog if isinstance(catalog, list) else list(catalog.values())
+    entries = catalog if isinstance(catalog, list) else catalog['imscriptions']
     axes = ["⊢","⊣","≻","≺","⋈","⊤","∈","∋","⊙","⊥","⊞","⊡"]
     for e in entries:
         if isinstance(e, dict) and e.get("name") == "universal_imscriptive_grammar":
