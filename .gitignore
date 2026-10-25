@@ -17,3 +17,5 @@ target/
 *.rlib
 *.rmeta
 .DS_Store
+
+src/m3iosis/membranes/

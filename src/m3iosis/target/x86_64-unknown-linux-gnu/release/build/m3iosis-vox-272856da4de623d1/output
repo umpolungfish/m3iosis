@@ -1,0 +1,6 @@
+cargo:rerun-if-env-changed=VOX_BAKED_INPUT_FILE
+cargo:rustc-link-arg-bin=factorization_31_resident=-nostartfiles
+cargo:rustc-link-arg-bin=phase_vessel_resident=-nostartfiles
+cargo:rerun-if-env-changed=VOX_PHASE_MODULUS_WORD
+cargo:rerun-if-env-changed=VOX_PHASE_BASE_WORD
+cargo:rerun-if-env-changed=VOX_PHASE_WIDTH_WORD
