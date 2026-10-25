@@ -73,6 +73,7 @@ mod native_numeral {
 }
 
 fn main() {
+    ::vox::ordering::cli::intercept();
     let result = (|| -> Result<String, String> {
         let raw = option_env!("MEMBRANE_WORDS")
             .ok_or("Build with MEMBRANE_WORDS=\"<a-word> <N-word>\"")?;
@@ -94,7 +95,7 @@ fn main() {
         let mut o = String::new();
         o.push_str("phase_unbraider — factors from a phase readout, no search\n");
         o.push_str("surface A: QFT-register phase readout (phase_unbraid)\n");
-        o.push_str(&alloc::format!("N = {}  ({}-bit u64 register; M = 2^q with q chosen so M >= N^2)\n", n_dec, n_val.bit_length()));
+        o.push_str(&alloc::format!("N = {}  ({}-bit u64 register; M = 2^q with q chosen so M >= N^2)\n", n_dec, u64::BITS - n_val.leading_zeros()));
         o.push_str(&alloc::format!("a = {}\n", a_val));
 
         let report = phase_unbraid::phase_unbraid_report(&n_dec, a_val, 64)?;

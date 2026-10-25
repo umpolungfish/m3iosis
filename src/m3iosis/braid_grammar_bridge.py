@@ -184,6 +184,8 @@ class BraidGrammarResult:
     grammar_tuple: str                  # the 12-glyph tuple
     frobenius_closed: bool              # μ∘δ = id check
     description: str                    # plain-language structural description
+    inverse_word: Optional[List[int]] = None
+    inverse_return_residual: float = 0.0
 
 
 class BraidGrammarAnalyzer:
@@ -209,8 +211,10 @@ class BraidGrammarAnalyzer:
             return 0.0
         return len(set(abs(g) for g in word)) / len(word)
 
-    def analyze(self, word: List[int], n_strands: int = 4) -> BraidGrammarResult:
+    def analyze(self, word: List[int], n_strands: int = 4, ordering=None) -> BraidGrammarResult:
         """Analyze a braid word and compute its grammar tuple."""
+        from m3iosis.positional_order import selected_braid
+        word = selected_braid(word, ordering)
         word_str = ",".join(str(g) for g in word)
         
         # 1. Braid unitary
@@ -264,7 +268,7 @@ class BraidGrammarAnalyzer:
         from m3iosis.fibonacci_anyon_tool import FibonacciQuantumComputer as BaseQC
         try:
             qc = BaseQC()
-            jones = qc.jones_polynomial(n_strands, word)
+            jones = qc.jones_polynomial(n_strands, word, ordering="canonical")
             jones_val = complex(jones)
         except Exception:
             # Fall back if the interface is different
@@ -281,6 +285,12 @@ class BraidGrammarAnalyzer:
         # 9. Frobenius check
         frob_closed = self._check_frobenius(U, trace)
         
+        inverse_word = [-g for g in reversed(word)]
+        inverse_operator = self._evaluate_braid_word(inverse_word, n_strands)
+        inverse_return_residual = float(np.max(np.abs(inverse_operator @ U - np.eye(len(U)))))
+        if not np.isfinite(inverse_return_residual) or inverse_return_residual > 1e-8:
+            raise ValueError(f"physical braid inverse return residual {inverse_return_residual}")
+
         # 10. Description
         desc = self._describe(word, n_strands, writhe, fusion_dim, phases_deg, frob_closed)
         
@@ -297,6 +307,8 @@ class BraidGrammarAnalyzer:
             grammar_tuple=tuple_str,
             frobenius_closed=frob_closed,
             description=desc,
+            inverse_word=inverse_word,
+            inverse_return_residual=inverse_return_residual,
         )
     def _map_to_grammar(self, word, n_strands, U, trace, writhe,
                         fusion_dim, phases_deg, jones_val, word_str):
@@ -473,10 +485,10 @@ class BraidGrammarAnalyzer:
         return " — ".join(parts)
 
     @classmethod
-    def analyze_word(cls, word: List[int], n_strands: int = 4) -> BraidGrammarResult:
+    def analyze_word(cls, word: List[int], n_strands: int = 4, ordering=None) -> BraidGrammarResult:
         """Convenience entry point."""
         analyzer = cls()
-        return analyzer.analyze(word, n_strands)
+        return analyzer.analyze(word, n_strands, ordering=ordering)
 
     @classmethod
     def print_report(cls, result: BraidGrammarResult) -> None:
@@ -491,6 +503,7 @@ class BraidGrammarAnalyzer:
         print(f"Braid trace:    {result.trace:.6f}")
         print(f"Jones poly:     {result.jones_polynomial:.6f}")
         print(f"Frobenius:      {'✓ CLOSED' if result.frobenius_closed else '✗ OPEN'}")
+        print(f"Physical inverse: {result.inverse_word}; return residual={result.inverse_return_residual:.8e}")
         print()
         print("GRAMMAR TUPLE:")
         print(f"  {result.grammar_tuple}")
@@ -504,6 +517,8 @@ class BraidGrammarAnalyzer:
 def braid_grammar_cli():
     """CLI entry point for the Braid Grammar Bridge."""
     import argparse
+    from m3iosis.positional_order import intercept
+    intercept()
     parser = argparse.ArgumentParser(
         description="Braid Grammar Bridge — Fibonacci braid words to grammar tuples"
     )

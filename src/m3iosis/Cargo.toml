@@ -12,3 +12,6 @@ path = "src/lib.rs"
 vox = { path = "../../../Vox" }
 num-bigint = "0.4"
 libm = "0.2"
+
+[features]
+mpqs_debug = []

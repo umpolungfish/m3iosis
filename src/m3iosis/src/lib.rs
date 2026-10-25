@@ -56,7 +56,9 @@ pub mod loader;
 pub mod safetensors;
 pub mod membrane_state;
 pub mod winding_readout;
-pub mod shor_braid;
+// The workspace Vox carrier owns braid ordering and its inverse return.
+// The historical local source stays preserved beside this delegation.
+pub mod shor_braid { pub use vox::shor_braid::*; }
 pub mod hadamard_gate;
 pub mod hadamard_factor_bridge;
 pub mod fixed_point_protocol;

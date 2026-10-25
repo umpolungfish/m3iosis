@@ -12,13 +12,7 @@ _shared = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_shared)
 
 
-def selected_braid(word, ordering=None):
-    order = (_shared.selected('braid', len(word)) if ordering is None
-             else _shared.permutation(ordering, len(word)) if isinstance(ordering, str)
-             else ordering)
-    result = _shared.apply(order, word)
-    spec = os.environ.get('IG_ORDER_SPEC') if ordering is None else ordering
-    return [-g for g in result] if spec == 'inverse' else result
+selected_braid = _shared.selected_braid
 
 
 def intercept():

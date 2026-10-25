@@ -101,6 +101,37 @@ fn qft(buf: &mut [Cx]) {
     for a in buf.iter_mut() { *a = a.scale(inv); }
 }
 
+fn permute_qft_register(buf: &mut [Cx], order: &vox::ordering::Permutation) -> Result<(), String> {
+    if !buf.len().is_power_of_two() { return Err("ordered QFT register length must be a power of two".into()); }
+    let width = buf.len().trailing_zeros() as usize;
+    vox::ordering::Permutation::checked(order.indices.clone(), width)?;
+    if order.indices.iter().enumerate().all(|(i, &source)| i == source) { return Ok(()); }
+    let mut visited = alloc::vec![false; buf.len()];
+    for start in 0..buf.len() {
+        if visited[start] { continue; }
+        let mut current = start;
+        let mut carried = buf[start];
+        loop {
+            visited[current] = true;
+            let mut destination = 0usize;
+            for (position, &source) in order.indices.iter().enumerate() {
+                destination |= ((current >> source) & 1) << position;
+            }
+            if destination == start { buf[destination] = carried; break; }
+            core::mem::swap(&mut carried, &mut buf[destination]);
+            current = destination;
+        }
+    }
+    Ok(())
+}
+
+fn qft_ordered(buf: &mut [Cx], order: &vox::ordering::Permutation) -> Result<(), String> {
+    permute_qft_register(buf, order)?;
+    qft(buf);
+    permute_qft_register(buf, &order.inverse())
+}
+
+
 fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
     while b != 0 { let t = b; b = a % b; a = t; }
     a
@@ -243,7 +274,8 @@ pub fn run_phase_unbraid(n_val: u64, a0: u64, max_shots: u32) -> Result<PhaseUnb
         let amp = 1.0 / libm::sqrt(l as f64);
         let mut x = 0usize;
         while x < m { buf[x] = Cx::new(amp, 0.0); x += r_true as usize; }
-        qft(&mut buf);
+        let order = vox::ordering::selected("phase-bits", buf.len().trailing_zeros() as usize)?;
+        qft_ordered(&mut buf, &order)?;
         let mut a_shots: u32 = 0;
         while a_shots < 8 && total_shots < max_shots {
             a_shots += 1;
@@ -303,7 +335,7 @@ pub fn phase_unbraid_report(n_str: &str, a0: u64, max_shots: u32) -> Result<Stri
         },
     };
     let res = run_phase_unbraid(n_val, a0, max_shots)?;
-    let n_big = BigUint::from(n_val);
+    let n_big = BigUint::from(res.n_val);
     let mut o = String::new();
     o.push_str(&format!("phase_unbraid — factors from a phase readout, no search\n"));
     o.push_str(&format!("N = {}  word: {}\n", n_val, native_numeral::encode(n_str.trim())));
@@ -324,6 +356,7 @@ pub fn phase_unbraid_report(n_str: &str, a0: u64, max_shots: u32) -> Result<Stri
     o.push_str(&format!(
         "basis a = {}  (coprime; ground-truth period r = {} — printed for comparison only, never used in the readout)\n",
         res.a_used, res.true_r));
+    o.push_str(&format!("selected phase readout k={:?} certified period={:?}\n", res.shot_k, res.certified_r));
     o.push_str("measurement record:\n");
     o.push_str(&res.trace);
     match res.factors {
@@ -360,5 +393,31 @@ mod phase_tests {
         let res = run_phase_unbraid(65, 2, 16).unwrap();
         let (p, q) = res.factors.expect("65 must factor by phase readout");
         assert!(p * q == 65 && (p == 13 || p == 5));
+    }
+}
+
+#[cfg(test)]
+mod selected_phase_return {
+    use super::*;
+    #[test]
+    fn source_bound_complex_register_returns_through_selected_inverse() {
+        for decimal in ["211060082272597355141159798675733025589", "218225791294202901887497812282378937747"] {
+            let source=decimal.parse::<u128>().unwrap();
+            assert_eq!(128-source.leading_zeros(),128);
+            let initial: Vec<Cx>=(0..8).map(|i| Cx::new(
+                ((source>>(i*8))&255) as f64 / 256.0,
+                ((source>>(64+i*8))&255) as f64 / 256.0)).collect();
+            for spec in ["canonical","reverse","perm:1,2,0"] {
+                let order=vox::ordering::Permutation::parse(spec,3).unwrap();
+                let mut state=initial.clone();
+                qft_ordered(&mut state,&order).unwrap();
+                for z in &mut state {z.im=-z.im;}
+                qft_ordered(&mut state,&order).unwrap();
+                for z in &mut state {z.im=-z.im;}
+                let residual=state.iter().zip(&initial)
+                    .map(|(a,b)|(a.re-b.re).abs().max((a.im-b.im).abs())).fold(0.0f64,f64::max);
+                assert!(residual<1e-12,"{spec}: {residual}");
+            }
+        }
     }
 }
